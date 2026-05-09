@@ -1,0 +1,43 @@
+# === AML-GNN-Deep: Default Experiment Configuration ===
+# All fields map directly to the ExperimentConfig dataclass (src/utils/config.py).
+
+seed: 42
+experiment_name: "aml-gnn-baseline"
+
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  dataset_variant: "LI-Small"         # LI-Small | HI-Small | LI-Medium | HI-Medium
+  num_time_snapshots: 12              # number of temporal windows for EvolveGCN
+  snapshot_strategy: "quantile"       # "quantile" (equal edges/window) or "fixed" (equal time/window)
+  val_ratio: 0.15
+  test_ratio: 0.15
+  log_transform_amount: true
+  encode_cyclic_time: true
+
+model:
+  hidden_dim: 128
+  num_layers: 2
+  dropout: 0.3
+  learning_rate: 0.001
+  weight_decay: 0.0005
+  gat_heads: 4
+  sage_aggregator: "mean"             # mean | max | lstm | pool
+  evolvegcn_variant: "EvolveGCN-H"    # EvolveGCN-H | EvolveGCN-O
+  evolvegcn_hidden_dim: 64
+
+training:
+  num_epochs: 200
+  batch_size: 1024
+  early_stopping_patience: 25
+  pos_weight: null                     # null → auto-compute from training set
+  optimizer: "adam"
+  lr_scheduler: "reduce_on_plateau"
+  lr_scheduler_patience: 10
+  lr_scheduler_factor: 0.5
+  device: "cuda"
+  num_workers: 0
+
+use_wandb: false
+wandb_project: "aml-gnn-deep"
+log_interval: 10

@@ -106,3 +106,53 @@ python experiments/run_temporal.py --variant HI-Small --model temporal_gcn --see
 # Reproduce baselines
 python experiments/run_baselines.py --variant HI-Small --seed 42
 ```
+
+## Pre-Thesis Writing Assessment (2026-05-10)
+
+**Status: All experimental work complete.** Every model trained, every metric collected, every bug documented. Ready to write.
+
+### What was delivered vs plan
+
+| Planned | Delivered | Status |
+|---------|-----------|--------|
+| Logistic Regression | LR + Random Forest + XGBoost | Done |
+| GCN | GCN — AUC-ROC 0.9705 | Done |
+| GAT | GAT — AUC-ROC 0.9581 | Done |
+| GraphSAGE | GraphSAGE — AUC-ROC 0.9459 | Done |
+| EvolveGCN | EvolveGCN-H — AUC-ROC 0.8972 | Done (negative finding) |
+| — | **TemporalGCN** — AUC-ROC 0.9570 | Added beyond plan |
+| — | **TGN** — AUC-ROC 0.9684, AUC-PR 0.3195 | Added beyond plan — best model |
+
+The research plan committed to 4 GNNs with EvolveGCN as the sole temporal model. The actual work delivered 6 GNNs across 3 temporal paradigms. This expansion was research-driven: initial experiments showed that snapshot-based temporal models (TemporalGCN, EvolveGCN-H) underperformed the static GCN, which motivated adding a continuous-time TGN. The thesis methodology should include a paragraph explaining this evolution as a data-driven architectural decision, not an afterthought.
+
+### Things to address in the thesis write-up
+
+1. **Update the methodology section.** The plan committed to EvolveGCN as the temporal architecture. The thesis should explain why TemporalGCN and TGN were added, framing it as "preliminary results revealed that snapshot-based temporal modeling was insufficient → continuous-time TGN was implemented to address this limitation."
+
+2. **Add TGN references.** The research plan references Pareja et al. (EvolveGCN) and Alarab & Prakoonwit (temporal GCN on Bitcoin). Add:
+   - Rossi, E., et al. (2020). *Temporal Graph Networks for Deep Learning on Dynamic Graphs.* arXiv:2006.10637.
+   - Altman, E., et al. (2023). *Realistic synthetic financial transactions for anti-money laundering models.* NeurIPS 2023 Datasets and Benchmarks Track.
+
+3. **Frame negative results as findings.** The EvolveGCN-H underperformance (AUC-ROC 0.897 vs TGN 0.968) is not a failure — it's evidence that snapshot-based temporal GNNs are architecturally insufficient for AML. Combined with TemporalGCN's underperformance (0.957), this directly motivates the continuous-time TGN approach. Present the 3-model temporal comparison as a coherent narrative.
+
+4. **One visual would help.** A 3-tier comparison diagram: ML baselines → static GNNs → snapshot temporal → continuous-time TGN, with key AUC-PR numbers. This single figure communicates the core thesis argument.
+
+5. **Evaluation protocol fairness.** Be explicit that temporal models were evaluated on a harder task (chronological split — predict future from past) while static GNNs used random split. TGN matching GCN's AUC-ROC on this harder evaluation is a stronger claim than the raw numbers suggest.
+
+### Known limitations to acknowledge in thesis
+
+- Dataset is synthetic — laundering patterns are simulated, not real-world criminal behavior
+- Single financial system (no cross-border features)
+- All models trained on CPU — GPU would allow larger architectures and hyperparameter search
+- TGN uses EMA memory (simpler than GRU) due to PyG compatibility issues
+- No hyperparameter optimization beyond manual tuning
+- No ensemble methods explored
+- The TGN per-slice performance metric requires chronological test ordering — cannot be directly compared to static GNNs
+
+### File checklist for thesis reference
+
+- `docs/THESIS_NARRATIVE.md` — Full research journey, novelty claims, conclusions
+- `docs/RESULTS.md` — Complete leaderboard, per-slice TGN performance
+- `CLAUDE.md` — Project overview, architecture, reproducibility commands
+- `results/logs/` — All training logs with per-epoch metrics
+- `results/checkpoints/` — Best model checkpoints

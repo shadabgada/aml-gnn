@@ -34,7 +34,7 @@ Table 4.2 presents the performance of the three static GNN architectures. These 
 
 GCN is the strongest static GNN, achieving AUC-ROC 0.9705 and AUC-PR 0.1882 with only 63,489 parameters. At its calibrated threshold of 0.7029, GCN detects 39.3% of laundering transactions at 18.5% precision. Compared to the best baseline (XGBoost, AUC-PR 0.1511), GCN adds 0.0371 AUC-PR, confirming that graph structural information contributes measurable detection value beyond what flat features provide.
 
-GAT underperforms GCN (AUC-ROC 0.9581, AUC-PR 0.0958) despite its theoretically more expressive attention mechanism. The single-head configuration, necessitated by CPU memory constraints (4 heads caused OOM on the 5-million-edge graph), likely limits the model's capacity to learn multiple relational patterns in parallel. The original GAT paper (Velickovic et al., 2018) reported that multi-head attention was important for stable training and performance; the single-head result here is consistent with that finding. This is a hardware constraint rather than an architectural limitation of GAT, and is discussed as a limitation in Section 5.4.
+GAT underperforms GCN (AUC-ROC 0.9581, AUC-PR 0.0958) despite its theoretically more expressive attention mechanism. The single-head configuration, necessitated by CPU memory constraints (4 heads caused OOM on the 5-million-edge graph), likely limits the model's capacity to learn multiple relational patterns in parallel. The original GAT paper (Veličković et al., 2018) reported that multi-head attention was important for stable training and performance; the single-head result here is consistent with that finding. This is a hardware constraint rather than an architectural limitation of GAT, and is discussed as a limitation in Section 5.4.
 
 GraphSAGE achieves the lowest static GNN performance (AUC-ROC 0.9459, AUC-PR 0.0420). Mean aggregation with neighbourhood sampling, while computationally efficient, appears to lose discriminative signal. In a graph where laundering accounts are structurally distinctive (high out-degree, unusual counterparty patterns), averaging neighbour features may dilute the very signal the model needs to detect. LSTM or max aggregation might preserve more of this signal, at increased computational cost.
 
@@ -63,7 +63,7 @@ EvolveGCN-H is the weakest GNN across all three tiers (AUC-ROC 0.8972, AUC-PR 0.
 
 Table 4.4 presents results for the continuous-time TGN.
 
-**Table 4.4: TGN results (chronological split, calibrated threshold).**
+**Table 4.4: TGN results (chronological split, calibrated thresholds).**
 
 | Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
 |-------|--------|---------|--------|-----------|--------|-----|--------|

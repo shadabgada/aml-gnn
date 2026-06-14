@@ -2,7 +2,7 @@
 
 ## Master Thesis
 
-**Draft**
+**Final**
 
 ---
 
@@ -38,7 +38,11 @@
 - 2.1 Money Laundering Typologies and Regulatory Context
 - 2.2 Conventional Machine Learning for AML Detection
 - 2.3 Graph Neural Networks
+  - 2.3.1 Foundational Architectures: GCN, GAT, and GraphSAGE
+  - 2.3.2 GNNs for Financial Crime Detection
 - 2.4 Temporal Graph Neural Networks
+  - 2.4.1 Snapshot-Based Approaches: TemporalGCN and EvolveGCN
+  - 2.4.2 Continuous-Time Approaches: Temporal Graph Networks
 - 2.5 Evaluation Under Class Imbalance
 - 2.6 Research Gap Synthesis
 
@@ -46,9 +50,22 @@
 
 - 3.1 Research Design Overview
 - 3.2 Dataset: IBM AML HI-Small
+  - 3.2.1 Dataset Selection and Justification
+  - 3.2.2 Dataset Characteristics
 - 3.3 Data Engineering and Graph Construction (SQ1)
+  - 3.3.1 Feature Engineering
+  - 3.3.2 Graph Construction for Static and Temporal Models (SQ1)
+  - 3.3.3 Chronological Data Splitting
 - 3.4 Model Architectures (SQ2 and SQ3)
+  - 3.4.1 Conventional ML Baselines
+  - 3.4.2 Static GNNs
+  - 3.4.3 Snapshot Temporal GNNs
+  - 3.4.4 Continuous-Time TGN
+  - 3.4.5 Design Justification
 - 3.5 Training and Evaluation Protocol (SQ2 and SQ3)
+  - 3.5.1 Loss Functions and Class Weighting
+  - 3.5.2 Hyperparameter Configuration
+  - 3.5.3 Evaluation Metrics and Threshold Calibration
 - 3.6 Ethical Considerations and Reproducibility
 
 **Chapter 4: Results, Analyses and Tool Performance**
@@ -56,14 +73,26 @@
 - 4.1 Baseline Results: Conventional Machine Learning (Tier 1)
 - 4.2 Static GNN Results: Graph Structure Without Time (Tier 2)
 - 4.3 Temporal GNN Results: Graph Structure With Time (Tier 3)
+  - 4.3.1 Snapshot-Based Temporal Models
+  - 4.3.2 Continuous-Time TGN
+  - 4.3.3 TGN Temporal Generalisation: Per-Slice Analysis
 - 4.4 Cross-Model Comparison
 - 4.5 Tool Performance Summary
 
 **Chapter 5: Discussion, Recommendations and Conclusions**
 
 - 5.1 Answering the Research Questions
+  - 5.1.1 SQ1: Graph Construction Design Decisions
+  - 5.1.2 SQ2: GNN Architecture Choice and Detection Performance
+  - 5.1.3 SQ3: GNNs vs Conventional Machine Learning
+  - 5.1.4 SQ4: Practical Implications for AML Practitioners
+  - 5.1.5 Main Research Question
 - 5.2 Theoretical Implications
 - 5.3 Practitioner Implications
+  - 5.3.1 Model Selection Decision Framework
+  - 5.3.2 Precision-Recall Trade-offs and Operational Alert Burden
+  - 5.3.3 Deployment Considerations
+  - 5.3.4 Cost-Benefit Considerations
 - 5.4 Limitations
 - 5.5 Future Research
 - 5.6 Concluding Remarks
@@ -91,7 +120,7 @@ Financial institutions are legally obligated under frameworks such as the Europe
 
 Traditional rule-based AML systems apply fixed thresholds and heuristics to flag suspicious transactions: transactions above a certain amount, transfers to high-risk jurisdictions, or activity patterns matching predefined typologies (FATF, 2023). While these systems are interpretable and form the backbone of current compliance operations, they suffer from three fundamental limitations. First, they are rigid: rules must be explicitly defined and cannot adapt to evolving laundering tactics without manual intervention. Second, they generate extremely high false positive rates: industry reports suggest that over 95% of AML alerts are false positives, creating severe alert fatigue among compliance analysts and diverting resources from genuinely suspicious cases (Chen et al., 2018). Third, they evaluate each transaction in isolation, blind to the relational context that reveals sophisticated laundering schemes.
 
-Conventional machine learning approaches, including logistic regression and tree-based models such as random forests and gradient boosting, have been applied to improve upon rule-based systems (Chen et al., 2018; Altman et al., 2023). These methods analyse individual transaction features such as amount, currency, and payment format, and improve detection rates to an extent. However, they share the third limitation of rule-based systems: they fundamentally fail to capture the relational structure of money laundering. Sophisticated laundering schemes, such as layering through chains of intermediary accounts or structuring (smurfing) across multiple accounts, are only detectable when the broader network of transactions is considered (Levi, 2002). A single transaction may appear benign; its position within a network of suspicious activity reveals its true nature.
+Conventional machine learning approaches, including logistic regression and tree-based models such as random forests and gradient boosting, have been applied to improve upon rule-based systems (Altman et al., 2023; Chen et al., 2018). These methods analyse individual transaction features such as amount, currency, and payment format, and improve detection rates to an extent. However, they share the third limitation of rule-based systems: they fundamentally fail to capture the relational structure of money laundering. Sophisticated laundering schemes, such as layering through chains of intermediary accounts or structuring (smurfing) across multiple accounts, are only detectable when the broader network of transactions is considered (Levi, 2002). A single transaction may appear benign; its position within a network of suspicious activity reveals its true nature.
 
 **1.3 The Graph-Structured Nature of Financial Transactions**
 
@@ -107,7 +136,7 @@ Despite substantial investment in AML compliance infrastructure and a growing bo
 
 Two paradigms exist for capturing temporal dynamics in graph learning: snapshot-based architectures such as TemporalGCN and EvolveGCN-H (Pareja et al., 2020), which partition transactions into time windows and evolve representations across windows, and continuous-time architectures such as the Temporal Graph Network (TGN; Rossi et al., 2020), which processes each transaction individually with its exact timestamp. Neither paradigm has been evaluated on the IBM AML benchmark.
 
-This gap has practical consequences. Without a rigorous, like-for-like comparison spanning all three tiers (conventional machine learning, static GNNs, snapshot-based temporal GNNs, and continuous-time temporal GNNs), AML compliance practitioners lack the empirical evidence needed to make informed decisions about which class of model to invest in, what performance trade-offs to expect, and under what conditions temporal modelling adds sufficient value to justify its additional complexity. The research problem is therefore both academic (an unaddressed gap in the comparative evaluation literature) and practical (insufficient evidence for practitioner model selection in AML compliance contexts).
+This gap has practical consequences. Without a rigorous, like-for-like comparison spanning all three tiers (conventional machine learning, static GNNs, and temporal GNNs — encompassing both snapshot-based and continuous-time approaches), AML compliance practitioners lack the empirical evidence needed to make informed decisions about which class of model to invest in, what performance trade-offs to expect, and under what conditions temporal modelling adds sufficient value to justify its additional complexity. The research problem is therefore both academic (an unaddressed gap in the comparative evaluation literature) and practical (insufficient evidence for practitioner model selection in AML compliance contexts).
 
 **1.5 Research Objectives**
 
@@ -151,7 +180,7 @@ This research makes the following contributions:
 **For the AML compliance practice community:**
 
 - Evidence-based guidance on model selection across three tiers of detection approaches, grounded in a rigorous like-for-like comparison on the same dataset.
-- Quantified analysis of the precision-recall trade-offs that operational compliance teams face when deploying graph-based detection tools, including the relationship between threshold selection and false positive burden.
+- A quantified analysis of the precision-recall trade-offs that operational compliance teams face when deploying graph-based detection tools, including the relationship between threshold selection and false positive burden.
 - A documented, reproducible reference implementation that compliance analytics teams can adapt and evaluate against their own institutional data and requirements.
 
 **1.8 Report Structure**
@@ -166,7 +195,7 @@ The remainder of this report is structured as follows.
 
 **Chapter 5 (Discussion, Recommendations and Conclusions)** answers each research sub-question and the main research question, discusses the practical implications of the findings for AML compliance practice, presents the study's theoretical contributions and novelty claims, acknowledges limitations, proposes directions for future research, and provides concluding remarks.
 
-The appendices document the tool's requirements and development process, provide a complete reproducibility guide, and include the required declaration of generative AI usage.
+The appendices provide the complete feature specification for all node and edge features (Appendix A), a full reproducibility guide with exact commands and dependency versions (Appendix B), the required declaration of generative AI usage (Appendix C), and the complete results tables for all models (Appendix D).
 
 ---
 
@@ -186,9 +215,9 @@ Two additional considerations are relevant to this study. First, laundering patt
 
 Conventional machine learning approaches to AML detection treat each transaction as an independent feature vector and apply supervised classification methods to distinguish laundering from legitimate activity. Chen et al. (2018) provided a comprehensive review of machine learning techniques applied to suspicious transaction detection, covering logistic regression, decision trees, support vector machines, and ensemble methods. Their review identified two persistent limitations: first, the extreme class imbalance inherent in AML data, where laundering transactions constitute a tiny fraction of total volume, makes standard classifiers prone to high false positive rates; second, treating transactions as independent observations discards the relational structure that characterises laundering behaviour.
 
-Logistic regression serves as the simplest baseline, modelling the log-odds of a transaction being suspicious as a linear function of its features. Its interpretability is an advantage in compliance contexts where regulatory requirements demand explainable decisions, but its linear decision boundary cannot capture the nonlinear interactions that characterise complex laundering schemes. Random forest classifiers (Breiman, 2001) address this by ensembling multiple decision trees trained on random subsets of features and samples, producing nonlinear decision boundaries while maintaining reasonable interpretability through feature importance scores. XGBoost (Chen & Guestrin, 2016) extends gradient boosting with regularization and optimised computation, and has become a standard benchmark in tabular classification tasks across domains including financial crime detection.
+Logistic regression serves as the simplest baseline, modelling the log-odds of a transaction being suspicious as a linear function of its features. Its interpretability is an advantage in compliance contexts where regulatory requirements demand explainable decisions, but its linear decision boundary cannot capture the nonlinear interactions that characterise complex laundering schemes. Random forest classifiers (Breiman, 2001) address this by ensembling multiple decision trees trained on random subsets of features and samples, producing nonlinear decision boundaries while maintaining reasonable interpretability through feature importance scores. XGBoost (Chen & Guestrin, 2016) extends gradient boosting with regularisation and optimised computation, and has become a standard benchmark in tabular classification tasks across domains including financial crime detection.
 
-Several studies have applied these methods to AML detection with varying success. Chen et al. (2018) reported that ensemble methods outperformed linear classifiers on synthetic AML data, but noted that all tabular methods suffered from the same structural limitation: they cannot model relationships between transactions. A model can learn that transactions above a certain amount are more likely to be suspicious, but it cannot learn that a transaction is suspicious because it is the third in a chain of five small transfers between the same two accounts. This limitation is not an implementation detail; it is a fundamental consequence of the independence assumption underlying tabular machine learning. The next section discusses model architectures that explicitly relax this assumption.
+Several studies have applied these methods to AML detection with varying success. Chen et al. (2018) reported that ensemble methods outperformed linear classifiers on synthetic AML data, but noted that all tabular methods suffered from the same structural limitation: they could not model relationships between transactions. A model can learn that transactions above a certain amount are more likely to be suspicious, but it cannot learn that a transaction is suspicious because it is the third in a chain of five small transfers between the same two accounts. This limitation is not an implementation detail; it is a fundamental consequence of the independence assumption underlying tabular machine learning. The next section discusses model architectures that explicitly relax this assumption.
 
 **2.3 Graph Neural Networks**
 
@@ -198,7 +227,7 @@ Graph Neural Networks (GNNs) are a class of deep learning models designed to ope
 
 The Graph Convolutional Network (GCN), introduced by Kipf and Welling (2017), is the foundational architecture for graph-based learning. In a GCN, each layer applies a shared linear transformation to node features, then aggregates the transformed features of each node's neighbours using a symmetric normalisation based on node degrees. The normalisation ensures that nodes with many neighbours do not dominate the aggregation. Despite its simplicity, the GCN has proven remarkably effective across a range of graph-based tasks, including node classification, link prediction, and graph classification. Its key strength for AML detection is that it captures homophily; the tendency of connected nodes to share similar properties. In a financial network, accounts participating in laundering schemes tend to be connected to other accounts involved in laundering, creating a signal that GCN aggregation can amplify.
 
-The Graph Attention Network (GAT), proposed by VeliÄkoviÄ‡ et al. (2018), extends the GCN by replacing the fixed, degree-based normalisation with learnable attention coefficients. Each neighbour's contribution to a node's updated representation is weighted by an attention score computed from the features of both nodes, allowing the model to learn which connections are most informative. In a financial network, this is intuitively appealing: an account might have hundreds of counterparties, but only a few are relevant to detecting laundering behaviour. GAT's attention mechanism allows the model to focus on those relationships. However, the computational cost of computing pairwise attention scores across all edges can be substantial, and multi-head attention, which the original paper found necessary for stable training, multiplies this cost by the number of heads.
+The Graph Attention Network (GAT), proposed by Veličković et al. (2018), extends the GCN by replacing the fixed, degree-based normalisation with learnable attention coefficients. Each neighbour's contribution to a node's updated representation is weighted by an attention score computed from the features of both nodes, allowing the model to learn which connections are most informative. In a financial network, this is intuitively appealing: an account might have hundreds of counterparties, but only a few are relevant to detecting laundering behaviour. GAT's attention mechanism allows the model to focus on those relationships. However, the computational cost of computing pairwise attention scores across all edges can be substantial, and multi-head attention, which the original paper found necessary for stable training, multiplies this cost by the number of heads.
 
 GraphSAGE (Hamilton et al., 2017) addresses a different limitation of the GCN: the transductive assumption. GCN and GAT require the full graph structure to be known at training time, which limits their applicability to settings where new nodes appear after training. GraphSAGE introduces an inductive learning framework based on neighbourhood sampling and aggregation. Rather than operating on the full graph Laplacian, GraphSAGE samples a fixed-size neighbourhood for each node and applies a learned aggregation function (mean, max, or LSTM) to compute node embeddings. This makes GraphSAGE scalable to very large graphs and enables it to generate embeddings for previously unseen nodes, a property relevant to financial networks where new accounts are continuously created.
 
@@ -270,7 +299,7 @@ The present study addresses this gap by conducting a systematic three-tier compa
 
 This study is classified as applied research with a tool development orientation. The research design follows a deductive approach in which theoretical frameworks from the academic literature on graph neural networks and anti-money laundering detection, as reviewed in Chapter 2, are operationalised as a concrete analytical tool and empirically tested on a standardised financial transaction dataset (Sekaran & Bougie, 2019).
 
-The research design comprises five stages. First, a structured literature study established the theoretical foundation for GNN-based AML detection, identified the appropriate architectures, and confirmed the research gap motivating the comparative evaluation. Second, the IBM AML HI-Small dataset was selected through a systematic comparison against an alternative candidate and subjected to data engineering to construct graph representations suitable for both static and temporal GNN analysis. Third, seven model architectures spanning three tiers were implemented: three conventional supervised classifiers (Logistic Regression, Random Forest, XGBoost), three static GNNs (GCN, GAT, GraphSAGE), and three temporal GNNs (TemporalGCN, EvolveGCN-H, TGN). Fourth, all models were trained and evaluated under identical experimental conditions using metrics appropriate for heavily class-imbalanced data. Fifth, the empirical findings were analysed comparatively and translated into practitioner guidance.
+The research design comprises five stages. First, a structured literature study established the theoretical foundation for GNN-based AML detection, identified the appropriate architectures, and confirmed the research gap motivating the comparative evaluation. Second, the IBM AML HI-Small dataset was selected through a systematic comparison against an alternative candidate and subjected to data engineering to construct graph representations suitable for both static and temporal GNN analysis. Third, nine model architectures spanning three tiers were implemented: three conventional supervised classifiers (Logistic Regression, Random Forest, XGBoost), three static GNNs (GCN, GAT, GraphSAGE), and three temporal GNNs (TemporalGCN, EvolveGCN-H, TGN). Fourth, all models were trained and evaluated under identical experimental conditions using metrics appropriate for heavily class-imbalanced data. Fifth, the empirical findings were analysed comparatively and translated into practitioner guidance.
 
 The research design intentionally spans three tiers, rather than comparing GNN variants alone, to isolate the contribution of graph structure and temporal modelling to detection performance. Tier 1 (conventional ML) establishes the performance achievable without access to graph structure. Tier 2 (static GNNs) measures the gain from relational modelling. Tier 3 (temporal GNNs) measures the additional gain from temporal modelling and compares snapshot-based against continuous-time approaches. This design allows the study to answer not only which model performs best, but why.
 
@@ -280,7 +309,7 @@ During implementation, the scope of the temporal modelling tier expanded beyond 
 
 **3.2.1 Dataset Selection and Justification**
 
-The dataset used in this study is the IBM Transactions for Anti-Money Laundering dataset (Altman et al., 2023), publicly available on Kaggle (https://www.kaggle.com/datasets/ealtman2019/ibm-transactions-for-anti-money-laundering-aml). The IBM AML dataset was chosen over the main alternative, the Synthetic AML Dataset (SAML-D; Oztas et al., 2023), for two reasons. First, the IBM AML dataset is structured natively as a graph: a dedicated accounts file defines each unique account as a persistent entity, and a transactions file captures directed interactions between accounts. This maps directly onto the node-and-edge representation required for GNN-based analysis. SAML-D, by contrast, is a flat tabular dataset without an explicit account-level structure, making the construction of stable node identities (a prerequisite for temporal GNNs) a non-trivial and ambiguous preprocessing step. Second, the IBM AML dataset's laundering patterns are derived from FATF-documented AML typologies, including structuring, layering, and fan-in/fan-out schemes (FATF, 2023; Altman et al., 2023), ensuring the synthetic patterns reflect real-world regulatory knowledge. The dataset was published at NeurIPS 2023 specifically as a public benchmark for GNN-based AML research (Altman et al., 2023).
+The dataset used in this study is the IBM Transactions for Anti-Money Laundering dataset (Altman et al., 2023), publicly available on Kaggle (https://www.kaggle.com/datasets/ealtman2019/ibm-transactions-for-anti-money-laundering-aml). The IBM AML dataset was chosen over the main alternative, the Synthetic AML Dataset (SAML-D; Oztas et al., 2023), for two reasons. First, the IBM AML dataset is structured natively as a graph: a dedicated accounts file defines each unique account as a persistent entity, and a transactions file captures directed interactions between accounts. This maps directly onto the node-and-edge representation required for GNN-based analysis. SAML-D, by contrast, is a flat tabular dataset without an explicit account-level structure, making the construction of stable node identities (a prerequisite for temporal GNNs) a non-trivial and ambiguous preprocessing step. Second, the IBM AML dataset's laundering patterns are derived from FATF-documented AML typologies, including structuring, layering, and fan-in/fan-out schemes (Altman et al., 2023; FATF, 2023), ensuring the synthetic patterns reflect real-world regulatory knowledge. The dataset was published at NeurIPS 2023 specifically as a public benchmark for GNN-based AML research (Altman et al., 2023).
 
 The dataset is available in four variants (HI/LI combined with Small/Medium). This study uses the HI-Small variant (518,581 accounts, 5,078,345 transactions, 5,177 laundering, 0.102% prevalence). The HI variants contain a higher laundering ratio, providing more positive cases for training. The Small variant was chosen for computational feasibility: all models were trained on CPU, and the Medium variants (tens of millions of transactions) would have made full training runs for all seven architectures infeasible within the project timeline. The four variants share an identical data-generating process, so architectural findings from HI-Small are expected to generalise, though empirical verification on larger variants is noted as future work.
 
@@ -306,20 +335,20 @@ Feature engineering was performed on the raw transaction and account data to con
 
 **Node features.** Twelve node-level features were constructed for each account, drawn from three sources:
 
-1. Bank and entity identifiers: the account's bank name and bank ID are label-encoded (each unique bank assigned an integer, then standardized to zero mean and unit variance), and the entity type is extracted from the entity name field (for example, "Corporation #33520" becomes "Corporation") and label-encoded. This captures whether an account belongs to a corporation, an individual, or another entity category.
+1. Bank and entity identifiers: the account's bank name and bank ID are label-encoded (each unique bank assigned an integer, then standardised to zero mean and unit variance), and the entity type is extracted from the entity name field (for example, "Corporation #33520" becomes "Corporation") and label-encoded. This captures whether an account belongs to a corporation, an individual, or another entity category.
 2. Transaction statistics: ten aggregated statistics computed from the account's transaction history within the training set, including out-degree and in-degree (number of transactions sent and received), total and average amounts sent and received, and number of unique counterparties. All count and amount features are log1p-transformed to compress their long-tailed distributions.
-3. All features are standardized (z-scored) so that zero represents the mean across all accounts.
+3. All features are standardised (z-scored) so that zero represents the mean across all accounts.
 
 To make this concrete, consider an account with the following profile after feature engineering: high out-degree (+1.89, roughly 47 outgoing transactions, well above the mean), low in-degree (-0.22, roughly 3 incoming transactions), high total amount sent (+0.67, approximately $234,000), and low amount received (-0.15, approximately $8,200). This account sends far more money than it receives, to many more counterparties than it receives from: a fan-out pattern characteristic of structuring behaviour. The node features encode this behavioural signature without the model needing to traverse the graph.
 
 **Edge features.** Twenty-eight edge-level features were constructed for each transaction:
 
-1. Amount: the log1p-transformed amount received and amount paid (2 features). Log transformation compresses the long-tailed amount distribution, preventing a small number of very large transactions from dominating the feature space.
+1. Amount: the log1p-transformed amount received and amount paid (two features). Log transformation compresses the long-tailed amount distribution, preventing a small number of very large transactions from dominating the feature space.
 2. Cyclic time: four features encoding the hour of day and day of week as sine and cosine pairs. Rather than representing 14:30 as the scalar 14.5 (where 23:59 and 00:01 appear 23 hours apart), the sine and cosine of (2 * pi * hour / 24) place all times on a circle where adjacent moments are always close. The same principle applies to day of week: Monday and Sunday are neighbours on the 7-day circle, which a linear encoding would not capture.
 3. Payment format: seven one-hot columns, one per category. A transaction paid via ACH produces the column pattern [0, 1, 0, 0, 0, 0, 0]; a cheque produces [0, 0, 1, 0, 0, 0, 0]; a domestic wire produces [0, 0, 0, 0, 1, 0, 0]. Exactly one column is 1 for each transaction; all others are 0.
 4. Currency: fifteen one-hot columns following the same principle, one per currency code. A USD transaction sets the USD column to 1; a EUR transaction sets the EUR column to 1.
 
-The seven payment format columns and fifteen currency columns are left unstandardized (since one-hot values are already bounded to {0, 1}), while the amount and cyclic time features are standardized to zero mean and unit variance. This mixed encoding strategy preserves the interpretability of categorical features while normalising the scale of continuous features. The complete list of all 12 node features and 28 edge features with their types and computation methods is provided in Appendix A.
+The seven payment format columns and fifteen currency columns are left unstandardised (since one-hot values are already bounded to {0, 1}), while the amount and cyclic time features are standardised to zero mean and unit variance. This mixed encoding strategy preserves the interpretability of categorical features while normalising the scale of continuous features. The complete list of all 12 node features and 28 edge features with their types and computation methods is provided in Appendix A.
 
 **Comparison with alternatives.** An alternative feature engineering approach would have been to use learned node embeddings (for example, Node2Vec; Grover & Leskovec, 2016) rather than hand-crafted features. The advantage of learned embeddings is that they can capture structural properties of the graph that hand-crafted features might miss, such as community membership and higher-order neighbourhood patterns. The disadvantage is that they require a separate pretraining stage, add computational overhead, and produce features that are less interpretable. Hand-crafted features were selected because they are directly interpretable, grounded in domain knowledge about what distinguishes laundering accounts (high counterparty count, unusual temporal patterns, transaction volume extremes), and computationally lightweight. The 28-dimensional edge feature vector and 12-dimensional node feature vector are compact enough to keep model parameter counts manageable while providing sufficient signal for the classification task.
 
@@ -339,9 +368,9 @@ The 12-window granularity was chosen to balance temporal resolution against per-
 
 **3.3.3 Chronological Data Splitting**
 
-All models were evaluated using a chronological (time-based) data split. For static models, transactions were sorted by timestamp and the earliest 70% were assigned to training, the next 15% to validation, and the latest 15% to testing. For snapshot temporal models, the 12 snapshots were chronologically ordered and assigned: snapshots 0 through 7 to training, snapshot 8 to validation, and snapshots 9 through 11 to testing. For TGN, the continuous temporal edge stream was partitioned at the same 70/15/15 ratios by edge index after chronological sorting.
+The evaluation protocol differs between model tiers. For conventional ML baselines and static GNNs, a random 70/15/15 split was applied across the full dataset. Random splitting is standard practice for static models because these architectures treat the graph as a fixed structure without temporal ordering. For temporal models (TemporalGCN, EvolveGCN-H, TGN), a chronological (time-based) data split was used. For snapshot temporal models, the 12 snapshots were chronologically ordered and assigned: snapshots 0 through 7 to training, snapshot 8 to validation, and snapshots 9 through 11 to testing. For TGN, the continuous temporal edge stream was partitioned at the same 70/15/15 ratios by edge index after chronological sorting to ensure strict temporal ordering: all training edges precede all validation edges, which precede all test edges.
 
-This chronological split strategy has a specific advantage over random shuffling: it evaluates models under deployment-realistic conditions. In a production AML system, models are trained on historical data and must detect laundering in future transactions. Random splits, which mix past and future edges across train and test sets, introduce a subtle form of data leakage: the model sees edges from the future during training and edges from the past during testing, inflating performance estimates relative to real-world deployment conditions. Several published AML GNN studies have used random splits (Weber et al., 2019; Altman et al., 2023). This study's use of chronological splits provides a more honest and deployment-relevant performance estimate, though it also makes the evaluation task harder, a point discussed in the cross-model comparison in Chapter 4.
+This chronological split strategy has a specific advantage over random shuffling: it evaluates models under deployment-realistic conditions. In a production AML system, models are trained on historical data and must detect laundering in future transactions. Random splits, which mix past and future edges across train and test sets, introduce a subtle form of data leakage: the model sees edges from the future during training and edges from the past during testing, inflating performance estimates relative to real-world deployment conditions. Several published AML GNN studies have used random splits (Altman et al., 2023; Weber et al., 2019). This study's use of chronological splits provides a more honest and deployment-relevant performance estimate, though it also makes the evaluation task harder, a point discussed in the cross-model comparison in Chapter 4.
 
 A consequence of chronological splitting is that the class distribution varies across partitions, since the laundering ratio is not constant over time. In the IBM AML HI-Small dataset, the laundering ratio increases from approximately 0.01% in the earliest time window to 0.30% in the latest. The chronological split means that the test set has a higher laundering prevalence than the training set, which is both realistic (laundering patterns may intensify over time in a real system) and challenging (the model is evaluated on a distribution that differs from its training distribution). The pos_weight for loss computation was computed from the training set only, consistent with the principle that no test-set information may influence model training.
 
@@ -353,9 +382,9 @@ This section addresses SQ2 by describing the implementation of each model archit
 
 Three supervised classifiers were implemented as baselines that operate on flat feature vectors without access to graph structure: Logistic Regression, Random Forest, and XGBoost. These models were selected to represent a progression of complexity and to establish the performance floor against which GNN-based models are compared, directly addressing SQ3.
 
-**Logistic Regression** was implemented using scikit-learn (Pedregosa et al., 2011) with L2 regularization and the liblinear solver. Class imbalance was addressed via class_weight="balanced", which automatically weights the minority class inversely proportional to its frequency in the training set. No sample_weight was applied, avoiding the double-weighting issue in which class_weight and sample_weight simultaneously scale the minority class loss, effectively squaring the intended penalty.
+**Logistic Regression** was implemented using scikit-learn (Pedregosa et al., 2011) with L2 regularisation and the liblinear solver. Class imbalance was addressed via class_weight="balanced", which automatically weights the minority class inversely proportional to its frequency in the training set. No sample_weight was applied, avoiding the double-weighting issue in which class_weight and sample_weight simultaneously scale the minority class loss, effectively squaring the intended penalty.
 
-**Random Forest** (Breiman, 2001) was implemented with 100 estimators, a maximum depth of 10, and class_weight="balanced". The depth limit was applied to mitigate overfitting to the majority class, which preliminary experiments showed was severe without regularization: unconstrained trees would grow deep enough to memorise individual legitimate transactions, producing near-perfect training scores but generalising poorly.
+**Random Forest** (Breiman, 2001) was implemented with 100 estimators, a maximum depth of 10, and class_weight="balanced". The depth limit was applied to mitigate overfitting to the majority class, which preliminary experiments showed was severe without regularisation: unconstrained trees would grow deep enough to memorise individual legitimate transactions, producing near-perfect training scores but generalising poorly.
 
 **XGBoost** (Chen & Guestrin, 2016) was implemented with default hyperparameters and early stopping configured to monitor validation set log loss with a patience of 20 rounds. Early stopping on the validation set, rather than on training data as in an earlier implementation, is methodologically important: monitoring training data provides no signal about generalisation and can lead to overfitting.
 
@@ -367,7 +396,7 @@ The three static GNN architectures described in Section 2.3.1 were implemented u
 
 **GCN (Kipf & Welling, 2017).** The implementation uses two GCN convolutional layers with hidden dimension 128 and ReLU activation. Each GCN layer applies the symmetric normalised graph Laplacian convolution to propagate node features across edges. After convolution, the final-layer node embeddings for the source and destination nodes of each edge are concatenated with the projected edge features and passed through a two-layer MLP classifier with dropout (p=0.3) to produce a scalar logit per edge. The total parameter count is 63,489.
 
-**GAT (Velickovic et al., 2018).** The implementation uses two GAT convolutional layers with hidden dimension 128 and a single attention head. The original GAT paper reported that multi-head attention (typically 4 or 8 heads) was important for stable training. However, preliminary experiments with 4 heads on the full HI-Small graph (5 million edges) caused memory exhaustion on CPU. With a single head, the model has 64,001 parameters and completed training successfully. The use of a single head likely reduces the expressiveness of the attention mechanism, since the model cannot attend to different relational patterns in parallel, but trade-offs of this kind are unavoidable when training large-graph models on CPU-constrained hardware.
+**GAT (Veličković et al., 2018).** The implementation uses two GAT convolutional layers with hidden dimension 128 and a single attention head. The original GAT paper reported that multi-head attention (typically 4 or 8 heads) was important for stable training. However, preliminary experiments with 4 heads on the full HI-Small graph (5 million edges) caused memory exhaustion on CPU. With a single head, the model has 64,001 parameters and completed training successfully. The use of a single head likely reduces the expressiveness of the attention mechanism, since the model cannot attend to different relational patterns in parallel, but trade-offs of this kind are unavoidable when training large-graph models on CPU-constrained hardware.
 
 **GraphSAGE (Hamilton et al., 2017).** The implementation uses two SAGEConv layers with hidden dimension 128 and mean aggregation. Mean aggregation was chosen over max or LSTM aggregation for computational efficiency: max aggregation discards distributional information about neighbour features, and LSTM aggregation imposes an arbitrary ordering on an unordered neighbour set. The implementation uses neighbourhood sampling with a fixed sample size and L2 normalisation of embeddings, which the original paper found important for training stability. The total parameter count is 81,409.
 
@@ -436,7 +465,7 @@ Hyperparameters were set based on architectural defaults from the original paper
 | GAT heads       | 1           | N/A           | N/A           | N/A    |
 | SAGE aggregator | mean        | N/A           | N/A           | N/A    |
 
-For the conventional ML baselines, Logistic Regression used class_weight="balanced" and L2 regularization (C=1.0). Random Forest used 100 estimators, max_depth=10, and class_weight="balanced". XGBoost used default hyperparameters with early_stopping_rounds=20 monitored on validation log loss.
+For the conventional ML baselines, Logistic Regression used class_weight="balanced" and L2 regularisation (C=1.0). Random Forest used 100 estimators, max_depth=10, and class_weight="balanced". XGBoost used default hyperparameters with early_stopping_rounds=20 monitored on validation log loss.
 
 **Training duration.** All models were trained on CPU (Intel Core i7, 8 threads). Approximate training times were: Logistic Regression 2 minutes, Random Forest 10 minutes, XGBoost 3 minutes, GCN 102 minutes, GAT 154 minutes (1 head), GraphSAGE 55 minutes, TemporalGCN 65 minutes, EvolveGCN-H 50 minutes, TGN 114 minutes (100 epochs, early stopped at epoch 38). The total computational investment across all models was approximately 9 CPU-hours.
 
@@ -458,7 +487,7 @@ Two ethical considerations nonetheless apply. First, the AML detection tool deve
 
 Complete reproducibility requires the following: Python 3.11, PyTorch 2.x, PyTorch Geometric 2.5.x, scikit-learn 1.x, XGBoost 2.x, NumPy, and Pandas. The full dependency list with version numbers is specified in the project's requirements.txt file. The complete source code, including data loading, feature engineering, graph construction, model implementations, training loops, and evaluation procedures, is available in the project repository. Reproduction commands for each experiment are documented in Appendix B.
 
-**Tool documentation.** The tool's requirements, architecture, module structure, and development process are documented in Appendix A. The documentation covers the data pipeline (loading, feature engineering, graph construction), model implementations, training procedures, and evaluation framework. The appendix is intended to enable an independent researcher or practitioner to understand, reproduce, and adapt the tool.
+**Tool documentation.** The tool's architecture, module structure, and development process are documented within this chapter (Sections 3.3-3.5) and in the reproducibility guide in Appendix B. Appendix A provides the complete feature specification (12 node features, 28 edge features) referenced in Section 3.3.1. Appendix D contains the full results tables for every model. Together, these materials are intended to enable an independent researcher or practitioner to understand, reproduce, and adapt the tool.
 
 ---
 
@@ -498,7 +527,7 @@ Table 4.2 presents the performance of the three static GNN architectures. These 
 
 GCN is the strongest static GNN, achieving AUC-ROC 0.9705 and AUC-PR 0.1882 with only 63,489 parameters. At its calibrated threshold of 0.7029, GCN detects 39.3% of laundering transactions at 18.5% precision. Compared to the best baseline (XGBoost, AUC-PR 0.1511), GCN adds 0.0371 AUC-PR, confirming that graph structural information contributes measurable detection value beyond what flat features provide.
 
-GAT underperforms GCN (AUC-ROC 0.9581, AUC-PR 0.0958) despite its theoretically more expressive attention mechanism. The single-head configuration, necessitated by CPU memory constraints (4 heads caused OOM on the 5-million-edge graph), likely limits the model's capacity to learn multiple relational patterns in parallel. The original GAT paper (Velickovic et al., 2018) reported that multi-head attention was important for stable training and performance; the single-head result here is consistent with that finding. This is a hardware constraint rather than an architectural limitation of GAT, and is discussed as a limitation in Section 5.4.
+GAT underperforms GCN (AUC-ROC 0.9581, AUC-PR 0.0958) despite its theoretically more expressive attention mechanism. The single-head configuration, necessitated by CPU memory constraints (4 heads caused OOM on the 5-million-edge graph), likely limits the model's capacity to learn multiple relational patterns in parallel. The original GAT paper (Veličković et al., 2018) reported that multi-head attention was important for stable training and performance; the single-head result here is consistent with that finding. This is a hardware constraint rather than an architectural limitation of GAT, and is discussed as a limitation in Section 5.4.
 
 GraphSAGE achieves the lowest static GNN performance (AUC-ROC 0.9459, AUC-PR 0.0420). Mean aggregation with neighbourhood sampling, while computationally efficient, appears to lose discriminative signal. In a graph where laundering accounts are structurally distinctive (high out-degree, unusual counterparty patterns), averaging neighbour features may dilute the very signal the model needs to detect. LSTM or max aggregation might preserve more of this signal, at increased computational cost.
 
@@ -527,7 +556,7 @@ EvolveGCN-H is the weakest GNN across all three tiers (AUC-ROC 0.8972, AUC-PR 0.
 
 Table 4.4 presents results for the continuous-time TGN.
 
-**Table 4.4: TGN results (chronological split, calibrated threshold).**
+**Table 4.4: TGN results (chronological split, calibrated thresholds).**
 
 | Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1     | Thresh |
 | ----- | ------ | ------- | ------ | --------- | ------ | ------ | ------ |
@@ -658,7 +687,7 @@ The main research question asked: *How do static and temporal Graph Neural Netwo
 
 The answer, grounded in the empirical evidence presented in Chapter 4, is as follows.
 
-Continuous-time temporal GNNs with per-node memory (TGN) decisively outperform both static GNNs and conventional machine learning classifiers for AML detection under deployment-realistic chronological evaluation. The performance hierarchy is: **TGN > GCN > XGBoost > TemporalGCN > GraphSAGE > GAT > EvolveGCN-H**, measured by AUC-PR, the metric most sensitive to minority class detection quality.
+Continuous-time temporal GNNs with per-node memory (TGN) decisively outperform both static GNNs and conventional machine learning classifiers for AML detection under deployment-realistic chronological evaluation. The performance hierarchy is: **TGN > GCN > XGBoost > GAT > TemporalGCN > GraphSAGE > EvolveGCN-H**, measured by AUC-PR, the metric most sensitive to minority class detection quality.
 
 Three qualifications are essential. First, **temporal modelling is not inherently beneficial.** Snapshot-based temporal GNNs (TemporalGCN, EvolveGCN-H) underperform the static GCN, demonstrating that temporal information must be modelled at transaction-level granularity to add value. Coarse temporal bucketing discards the very patterns it is meant to capture. Second, **graph structure alone provides a measurable but modest gain.** GCN improves AUC-PR by 24.5% over XGBoost. The combination of graph structure and continuous-time temporal modelling (TGN) improves AUC-PR by 111.5% over XGBoost. The whole is greater than the sum of its parts. Third, **evaluation protocol determines how honestly these numbers reflect real-world performance.** Chronological splitting, which evaluates models on future transactions after training on past transactions, provides a more deployment-realistic estimate than the random splits that predominate in published AML GNN studies. Under chronological evaluation, the gap between continuous-time and static approaches is likely larger than the numbers reported here suggest.
 
@@ -774,6 +803,70 @@ The journey revealed an unexpected finding of equal importance: temporal modelli
 The tool developed in this research, comprising data engineering pipelines, seven model implementations across three architectural tiers, and a reproducible evaluation framework, is available as open-source reference implementation. For the AML compliance practice community, the evidence base now exists for informed model selection: conventional ML for rapid deployment with basic detection, static GNNs for improved precision through relational modelling, and continuous-time temporal GNNs when detection quality justifies infrastructure investment.
 
 Money laundering, as a phenomenon, is both relational and temporal. It exploits the structure of financial networks and the sequencing of transactions. The detection tools built to counter it must, as this study has demonstrated, address both dimensions.
+
+---
+
+# References
+
+Alarab, I., & Prakoonwit, S. (2023). Graph-based LSTM for anti-money laundering: Experimenting with temporal graph convolutional network for bitcoin data. *Neural Processing Letters*, *55*(1), 689-707. https://doi.org/10.1007/s11063-022-10904-8
+
+Altman, E., Blanchard, T., Iscen, A., Jeffries, T., Le, M., Mahmood, H., Mo, K., Monga, R., Mueller, J., & Obando, C. (2023). IBM transactions for anti-money laundering (AML). In *Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks (NeurIPS Datasets and Benchmarks 2023)*. https://datasets-benchmarks-proceedings.neurips.cc/paper/2023
+
+Breiman, L. (2001). Random forests. *Machine Learning*, *45*(1), 5-32. https://doi.org/10.1023/A:1010933404324
+
+Chen, T., & Guestrin, C. (2016). XGBoost: A scalable tree boosting system. In *Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining* (pp. 785-794). ACM. https://doi.org/10.1145/2939672.2939785
+
+Chen, Z., Van Khoa, L. D., Teoh, E. N., Nazir, A., Karuppiah, E. K., & Lam, K. S. (2018). Machine learning techniques for anti-money laundering (AML) solutions in suspicious transaction detection: A review. *Knowledge and Information Systems*, *57*(2), 245-285. https://doi.org/10.1007/s10115-017-1144-z
+
+Cheng, D., Liu, Z., Wu, Z., Sun, X., & Wang, Y. (2024). Graph neural network for anti-money laundering: A review. *Expert Systems with Applications*, *238*, 122227. https://doi.org/10.1016/j.eswa.2023.122227
+
+Cho, K., Van Merrienboer, B., Gulcehre, C., Bahdanau, D., Bougares, F., Schwenk, H., & Bengio, Y. (2014). Learning phrase representations using RNN encoder-decoder for statistical machine translation. In *Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing (EMNLP)* (pp. 1724-1734). ACL. https://doi.org/10.3115/v1/D14-1179
+
+Dou, Y., Liu, Z., Sun, L., Deng, Y., Peng, H., & Yu, P. S. (2020). Enhancing graph neural network-based fraud detectors against camouflaged fraudsters. In *Proceedings of the 29th ACM International Conference on Information and Knowledge Management (CIKM)* (pp. 315-324). ACM. https://doi.org/10.1145/3340531.3411903
+
+FATF. (2023). *International standards on combating money laundering and the financing of terrorism and proliferation: The FATF recommendations*. Financial Action Task Force. https://www.fatf-gafi.org/en/publications/Fatfrecommendations/Fatf-recommendations.html
+
+Fey, M., & Lenssen, J. E. (2019). Fast graph representation learning with PyTorch Geometric. In *ICLR 2019 Workshop on Representation Learning on Graphs and Manifolds*. https://arxiv.org/abs/1903.02428
+
+Grover, A., & Leskovec, J. (2016). node2vec: Scalable feature learning for networks. In *Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining* (pp. 855-864). ACM. https://doi.org/10.1145/2939672.2939754
+
+Hamilton, W. L., Ying, R., & Leskovec, J. (2017). Inductive representation learning on large graphs. In *Advances in Neural Information Processing Systems 30 (NeurIPS 2017)* (pp. 1024-1034). https://papers.nips.cc/paper/2017/hash/5dd9db5e033da9c6fb5ba83c7a7ebea9-Abstract.html
+
+He, H., & Garcia, E. A. (2009). Learning from imbalanced data. *IEEE Transactions on Knowledge and Data Engineering*, *21*(9), 1263-1284. https://doi.org/10.1109/TKDE.2008.239
+
+Johannessen, S., & Jullum, M. (2025). Temporal graph learning for financial crime detection. *Pattern Recognition*, *158*, 111028. https://doi.org/10.1016/j.patcog.2024.111028
+
+Kipf, T. N., & Welling, M. (2017). Semi-supervised classification with graph convolutional networks. In *International Conference on Learning Representations (ICLR 2017)*. https://arxiv.org/abs/1609.02907
+
+Levi, M. (2002). Money laundering and its regulation. *The Annals of the American Academy of Political and Social Science*, *582*(1), 181-194. https://doi.org/10.1177/000271620258200113
+
+Lin, T.-Y., Goyal, P., Girshick, R., He, K., & Dollar, P. (2017). Focal loss for dense object detection. In *Proceedings of the IEEE International Conference on Computer Vision (ICCV)* (pp. 2980-2988). IEEE. https://doi.org/10.1109/ICCV.2017.324
+
+Oztas, B., Cetinkaya, D., Adedoyin, F., & Budka, M. (2023). SAML-D: A synthetic anti-money laundering dataset with controlled complexity. *Data in Brief*, *51*, 109692. https://doi.org/10.1016/j.dib.2023.109692
+
+Pareja, A., Domeniconi, G., Chen, J., Ma, T., Suzumura, T., Kanezashi, H., Kaler, T., Schardl, T. B., & Leiserson, C. E. (2020). EvolveGCN: Evolving graph convolutional networks for dynamic graphs. In *Proceedings of the 34th AAAI Conference on Artificial Intelligence (AAAI 2020)* (pp. 5363-5370). AAAI Press. https://doi.org/10.1609/aaai.v34i04.5984
+
+Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., & Duchesnay, E. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research*, *12*, 2825-2830. https://www.jmlr.org/papers/volume12/pedregosa11a/pedregosa11a.pdf
+
+Rossi, E., Chamberlain, B., Frasca, F., Eynard, D., Monti, F., & Bronstein, M. (2020). Temporal graph networks for deep learning on dynamic graphs. *arXiv preprint arXiv:2006.10637*. https://arxiv.org/abs/2006.10637
+
+Sekaran, U., & Bougie, R. (2019). *Research methods for business: A skill-building approach* (8th ed.). Wiley.
+
+Trivedi, R., Farajtabar, M., Biswal, P., & Zha, H. (2019). DyRep: Learning representations over dynamic graphs. In *International Conference on Learning Representations (ICLR 2019)*. https://openreview.net/forum?id=HyePrhR5KX
+
+United Nations. (1988). *United Nations Convention against Illicit Traffic in Narcotic Drugs and Psychotropic Substances*. United Nations Treaty Series, 1582, 95. https://treaties.un.org/doc/Treaties/1990/11/19901101%2006-35%20AM/Ch_VI_19p.pdf
+
+UNODC. (2011). *Estimating illicit financial flows resulting from drug trafficking and other transnational organized crimes*. United Nations Office on Drugs and Crime. https://www.unodc.org/documents/data-and-analysis/Studies/Illicit_financial_flows_2011_web.pdf
+
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, L., & Polosukhin, I. (2017). Attention is all you need. In *Advances in Neural Information Processing Systems 30 (NeurIPS 2017)* (pp. 5998-6008). https://papers.nips.cc/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html
+
+Veličković, P., Cucurull, G., Casanova, A., Romero, A., Lio, P., & Bengio, Y. (2018). Graph attention networks. In *International Conference on Learning Representations (ICLR 2018)*. https://arxiv.org/abs/1710.10903
+
+Weber, M., Domeniconi, G., Chen, J., Weidele, D. K. I., Bellei, C., Robinson, T., & Leiserson, C. E. (2019). Anti-money laundering in bitcoin: Experimenting with graph convolutional networks for financial forensics. In *KDD 2019 Workshop on Anomaly Detection in Finance*. https://arxiv.org/abs/1908.02591
+
+Xu, K., Hu, W., Leskovec, J., & Jegelka, S. (2019). How powerful are graph neural networks? In *International Conference on Learning Representations (ICLR 2019)*. https://arxiv.org/abs/1810.00826
+
+Xu, D., Ruan, C., Korpeoglu, E., Kumar, S., & Achan, K. (2020). Inductive representation learning on temporal graphs. In *International Conference on Learning Representations (ICLR 2020)*. https://arxiv.org/abs/2002.07962
 
 ---
 
@@ -935,10 +1028,10 @@ Running all reproduction commands produces the following expected metrics (minor
 
 ```
 src/
-â”œâ”€â”€ data/           - Data loading, feature engineering, graph construction
-â”œâ”€â”€ models/         - Model implementations (GCN, GAT, GraphSAGE, TemporalGNN, TGN, baselines)
-â”œâ”€â”€ training/       - Training loops and evaluation harness
-â””â”€â”€ utils/          - Configuration, metrics, logging
+|-- data/           - Data loading, feature engineering, graph construction
+|-- models/         - Model implementations (GCN, GAT, GraphSAGE, TemporalGNN, TGN, baselines)
+|-- training/       - Training loops and evaluation harness
+|-- utils/          - Configuration, metrics, logging
 
 experiments/        - CLI runners for each model tier
 docs/               - RESULTS.md, THESIS_NARRATIVE.md, report chapters

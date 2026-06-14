@@ -1,5 +1,4 @@
-﻿
-# Graph Neural Networks Applied to Money Laundering Detection
+﻿# Graph Neural Networks Applied to Money Laundering Detection
 
 ## Master Thesis
 
@@ -78,10 +77,7 @@
 
 ---
 
-
-
 ---
-
 
 # Chapter 1: Introduction
 
@@ -146,12 +142,14 @@ These sub-questions are collectively answerable using the available data and exp
 This research makes the following contributions:
 
 **For the academic community:**
+
 - The first application of temporal GNN architectures (TemporalGCN, EvolveGCN-H, and TGN) to the IBM AML benchmark, extending the static GNN results of Altman et al. (2023). TGN (Rossi et al., 2020) represents the first application of a continuous-time temporal GNN to AML edge classification.
 - The first systematic three-tier comparative evaluation (conventional ML, static GNNs, snapshot temporal GNNs, continuous-time temporal GNN) on a unified AML benchmark under identical experimental conditions.
 - Empirical evidence that continuous-time temporal modelling achieves substantially higher precision-recall performance than snapshot-based temporal approaches for AML detection, and that snapshot-based temporal GNNs can underperform even static models, a finding with implications for future AML GNN architecture design.
 - A deployment-realistic chronological evaluation protocol in which models are trained on past transactions and tested on future transactions, providing more honest real-world performance estimates than the random splits predominant in published AML GNN studies.
 
 **For the AML compliance practice community:**
+
 - Evidence-based guidance on model selection across three tiers of detection approaches, grounded in a rigorous like-for-like comparison on the same dataset.
 - Quantified analysis of the precision-recall trade-offs that operational compliance teams face when deploying graph-based detection tools, including the relationship between threshold selection and false positive burden.
 - A documented, reproducible reference implementation that compliance analytics teams can adapt and evaluate against their own institutional data and requirements.
@@ -170,10 +168,7 @@ The remainder of this report is structured as follows.
 
 The appendices document the tool's requirements and development process, provide a complete reproducibility guide, and include the required declaration of generative AI usage.
 
-
-
 ---
-
 
 # Chapter 2: Theoretical Framework
 
@@ -267,10 +262,7 @@ The consequence of this gap is twofold. Academically, there is no published evid
 
 The present study addresses this gap by conducting a systematic three-tier comparative evaluation: conventional machine learning classifiers, static GNN architectures, and temporal GNN architectures spanning both snapshot-based and continuous-time approaches, all trained and evaluated on the same IBM AML HI-Small dataset under identical experimental conditions. The theoretical framework established in this chapter provides the basis for the architectural choices and evaluation protocol described in Chapter 3.
 
-
-
 ---
-
 
 # Chapter 3: Research Methodology and Tool Development
 
@@ -425,24 +417,24 @@ Hyperparameters were set based on architectural defaults from the original paper
 
 **Table 3.1: Hyperparameter configurations.**
 
-| Parameter | Static GNNs | TemporalGCN | EvolveGCN-H | TGN |
-|-----------|-------------|-------------|-------------|-----|
-| Hidden dim | 128 | 128 | 128 | 128 |
-| Num layers | 2 | 2 | 2 | N/A |
-| Dropout | 0.3 | 0.3 | 0.3 | 0.3 |
-| Learning rate | 0.001 | 0.001 | 0.001 | 0.003 |
-| Weight decay | 0.0005 | 0.0005 | 0.0005 | 0.0005 |
-| Grad clip | 1.0 | 1.0 | 1.0 | 0 |
-| Pos weight mult | 0.1 | 0.1 | 0.1 | 0.01 |
-| Epochs | 200 | 200 | 200 | 100 |
-| Patience | 25 | 25 | 25 | 25 |
-| Batch size | Full graph | Full snapshot | Full snapshot | 2048 |
-| Memory dim | N/A | N/A | N/A | 64 |
-| Time dim | N/A | N/A | N/A | 8 |
-| EMA beta | N/A | N/A | N/A | 0.85 |
-| Rank | N/A | N/A | 2 | N/A |
-| GAT heads | 1 | N/A | N/A | N/A |
-| SAGE aggregator | mean | N/A | N/A | N/A |
+| Parameter       | Static GNNs | TemporalGCN   | EvolveGCN-H   | TGN    |
+| --------------- | ----------- | ------------- | ------------- | ------ |
+| Hidden dim      | 128         | 128           | 128           | 128    |
+| Num layers      | 2           | 2             | 2             | N/A    |
+| Dropout         | 0.3         | 0.3           | 0.3           | 0.3    |
+| Learning rate   | 0.001       | 0.001         | 0.001         | 0.003  |
+| Weight decay    | 0.0005      | 0.0005        | 0.0005        | 0.0005 |
+| Grad clip       | 1.0         | 1.0           | 1.0           | 0      |
+| Pos weight mult | 0.1         | 0.1           | 0.1           | 0.01   |
+| Epochs          | 200         | 200           | 200           | 100    |
+| Patience        | 25          | 25            | 25            | 25     |
+| Batch size      | Full graph  | Full snapshot | Full snapshot | 2048   |
+| Memory dim      | N/A         | N/A           | N/A           | 64     |
+| Time dim        | N/A         | N/A           | N/A           | 8      |
+| EMA beta        | N/A         | N/A           | N/A           | 0.85   |
+| Rank            | N/A         | N/A           | 2             | N/A    |
+| GAT heads       | 1           | N/A           | N/A           | N/A    |
+| SAGE aggregator | mean        | N/A           | N/A           | N/A    |
 
 For the conventional ML baselines, Logistic Regression used class_weight="balanced" and L2 regularization (C=1.0). Random Forest used 100 estimators, max_depth=10, and class_weight="balanced". XGBoost used default hyperparameters with early_stopping_rounds=20 monitored on validation log loss.
 
@@ -468,10 +460,7 @@ Complete reproducibility requires the following: Python 3.11, PyTorch 2.x, PyTor
 
 **Tool documentation.** The tool's requirements, architecture, module structure, and development process are documented in Appendix A. The documentation covers the data pipeline (loading, feature engineering, graph construction), model implementations, training procedures, and evaluation framework. The appendix is intended to enable an independent researcher or practitioner to understand, reproduce, and adapt the tool.
 
-
-
 ---
-
 
 # Chapter 4: Results, Analyses and Tool Performance
 
@@ -483,11 +472,11 @@ Table 4.1 presents the performance of the three conventional supervised classifi
 
 **Table 4.1: Conventional ML baseline results (random 70/15/15 split, threshold 0.50).**
 
-| Model | AUC-ROC | AUC-PR | Precision | Recall | F1 |
-|-------|---------|--------|-----------|--------|-----|
-| XGBoost | 0.9381 | 0.1511 | 0.0265 | 0.8610 | 0.0514 |
-| Random Forest | 0.8603 | 0.0619 | 0.0035 | 0.9148 | 0.0070 |
-| Logistic Regression | 0.9378 | 0.0376 | 0.0135 | 0.9295 | 0.0267 |
+| Model               | AUC-ROC | AUC-PR | Precision | Recall | F1     |
+| ------------------- | ------- | ------ | --------- | ------ | ------ |
+| XGBoost             | 0.9381  | 0.1511 | 0.0265    | 0.8610 | 0.0514 |
+| Random Forest       | 0.8603  | 0.0619 | 0.0035    | 0.9148 | 0.0070 |
+| Logistic Regression | 0.9378  | 0.0376 | 0.0135    | 0.9295 | 0.0267 |
 
 XGBoost is the strongest conventional classifier, achieving AUC-ROC 0.9381 and AUC-PR 0.1511. Logistic Regression matches XGBoost on AUC-ROC (0.9378) but achieves substantially lower AUC-PR (0.0376), indicating that its strong ranking performance does not translate to effective identification of the minority class. At the default 0.5 threshold, Logistic Regression achieves very high recall (0.9295) but near-zero precision (0.0135): it flags nearly all laundering transactions, but at the cost of an overwhelming false positive rate that would be operationally unworkable.
 
@@ -501,11 +490,11 @@ Table 4.2 presents the performance of the three static GNN architectures. These 
 
 **Table 4.2: Static GNN results (random 70/15/15 split, calibrated thresholds).**
 
-| Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
-|-------|--------|---------|--------|-----------|--------|-----|--------|
-| GCN | 63K | 0.9705 | 0.1882 | 0.1846 | 0.3933 | 0.2513 | 0.7029 |
-| GAT (1 head) | 64K | 0.9581 | 0.0958 | 0.0539 | 0.5317 | 0.0979 | 0.5544 |
-| GraphSAGE | 81K | 0.9459 | 0.0420 | 0.0563 | 0.2953 | 0.0946 | 0.4852 |
+| Model        | Params | AUC-ROC | AUC-PR | Precision | Recall | F1     | Thresh |
+| ------------ | ------ | ------- | ------ | --------- | ------ | ------ | ------ |
+| GCN          | 63K    | 0.9705  | 0.1882 | 0.1846    | 0.3933 | 0.2513 | 0.7029 |
+| GAT (1 head) | 64K    | 0.9581  | 0.0958 | 0.0539    | 0.5317 | 0.0979 | 0.5544 |
+| GraphSAGE    | 81K    | 0.9459  | 0.0420 | 0.0563    | 0.2953 | 0.0946 | 0.4852 |
 
 GCN is the strongest static GNN, achieving AUC-ROC 0.9705 and AUC-PR 0.1882 with only 63,489 parameters. At its calibrated threshold of 0.7029, GCN detects 39.3% of laundering transactions at 18.5% precision. Compared to the best baseline (XGBoost, AUC-PR 0.1511), GCN adds 0.0371 AUC-PR, confirming that graph structural information contributes measurable detection value beyond what flat features provide.
 
@@ -525,10 +514,10 @@ Table 4.3 presents results for the two snapshot-based temporal architectures.
 
 **Table 4.3: Snapshot temporal GNN results (chronological split, calibrated thresholds).**
 
-| Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
-|-------|--------|---------|--------|-----------|--------|-----|--------|
-| TemporalGCN | 162K | 0.9570 | 0.0637 | 0.1177 | 0.1563 | 0.1343 | 0.7326 |
-| EvolveGCN-H | 578K | 0.8972 | 0.0275 | 0.0465 | 0.0982 | 0.0631 | 0.7029 |
+| Model       | Params | AUC-ROC | AUC-PR | Precision | Recall | F1     | Thresh |
+| ----------- | ------ | ------- | ------ | --------- | ------ | ------ | ------ |
+| TemporalGCN | 162K   | 0.9570  | 0.0637 | 0.1177    | 0.1563 | 0.1343 | 0.7326 |
+| EvolveGCN-H | 578K   | 0.8972  | 0.0275 | 0.0465    | 0.0982 | 0.0631 | 0.7029 |
 
 TemporalGCN achieves AUC-ROC 0.9570 with 161,793 parameters. Despite incorporating temporal information through GRU-evolved node states across 12 snapshots, it underperforms the static GCN (AUC-ROC 0.9705, AUC-PR 0.1882). The difference is partly attributable to the harder chronological evaluation protocol, but the magnitude of the gap (0.1245 AUC-PR) suggests that the 12-snapshot temporal resolution is too coarse to capture laundering patterns. Structuring and layering schemes that unfold across individual transactions within a single snapshot window are invisible to the model.
 
@@ -540,9 +529,9 @@ Table 4.4 presents results for the continuous-time TGN.
 
 **Table 4.4: TGN results (chronological split, calibrated threshold).**
 
-| Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
-|-------|--------|---------|--------|-----------|--------|-----|--------|
-| TGN | 119K | 0.9684 | 0.3195 | 0.4257 | 0.3011 | 0.3527 | 0.4159 |
+| Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1     | Thresh |
+| ----- | ------ | ------- | ------ | --------- | ------ | ------ | ------ |
+| TGN   | 119K   | 0.9684  | 0.3195 | 0.4257    | 0.3011 | 0.3527 | 0.4159 |
 
 TGN achieves AUC-ROC 0.9684 and AUC-PR 0.3195 with 119,000 parameters. This is the best overall result across all three tiers. At its calibrated threshold of 0.4159, TGN detects 30.1% of laundering transactions at 42.6% precision: for every 100 alerts generated, approximately 43 are genuine laundering cases.
 
@@ -556,14 +545,14 @@ Table 4.5 presents TGN performance across individual time slices of the chronolo
 
 **Table 4.5: TGN per-slice performance (threshold 0.50, selected slices).**
 
-| Slice | AUC-ROC | AUC-PR |
-|-------|---------|--------|
-| 0 (earliest test) | 0.9205 | 0.0502 |
-| 3 | 0.9280 | 0.0853 |
-| 6 | 0.9714 | 0.0712 |
-| 9 | 0.9591 | 0.0769 |
-| 10 | 0.9563 | 0.1875 |
-| 11 (latest test) | 0.9732 | 0.4518 |
+| Slice             | AUC-ROC | AUC-PR |
+| ----------------- | ------- | ------ |
+| 0 (earliest test) | 0.9205  | 0.0502 |
+| 3                 | 0.9280  | 0.0853 |
+| 6                 | 0.9714  | 0.0712 |
+| 9                 | 0.9591  | 0.0769 |
+| 10                | 0.9563  | 0.1875 |
+| 11 (latest test)  | 0.9732  | 0.4518 |
 
 AUC-PR improves from 0.0502 in the earliest test slice to 0.4518 in the latest, a factor of 9.0. AUC-ROC improves from 0.9205 to 0.9732. The upward trend is not monotonic across all slices (slice 6 achieves higher AUC-ROC than slice 9, for example), reflecting natural variation in laundering prevalence and difficulty across time windows. The overall trajectory, however, is unambiguously positive.
 
@@ -577,17 +566,17 @@ Table 4.6 presents all nine models in a unified leaderboard, ordered by AUC-PR. 
 
 **Table 4.6: Complete model leaderboard, ordered by AUC-PR.**
 
-| Tier | Model | Params | AUC-ROC | AUC-PR | F1 | Eval Split |
-|------|-------|--------|---------|--------|-----|------------|
-| Temporal | TGN | 119K | 0.9684 | 0.3195 | 0.3527 | Chronological |
-| Static | GCN | 63K | 0.9705 | 0.1882 | 0.2513 | Random |
-| Conv | XGBoost | N/A | 0.9381 | 0.1511 | 0.0514 | Random |
-| Static | GAT | 64K | 0.9581 | 0.0958 | 0.0979 | Random |
-| Temporal | TemporalGCN | 162K | 0.9570 | 0.0637 | 0.1343 | Chronological |
-| Conv | RF | N/A | 0.8603 | 0.0619 | 0.0070 | Random |
-| Static | GraphSAGE | 81K | 0.9459 | 0.0420 | 0.0946 | Random |
-| Conv | LR | N/A | 0.9378 | 0.0376 | 0.0267 | Random |
-| Temporal | EvolveGCN-H | 578K | 0.8972 | 0.0275 | 0.0631 | Chronological |
+| Tier     | Model       | Params | AUC-ROC | AUC-PR | F1     | Eval Split    |
+| -------- | ----------- | ------ | ------- | ------ | ------ | ------------- |
+| Temporal | TGN         | 119K   | 0.9684  | 0.3195 | 0.3527 | Chronological |
+| Static   | GCN         | 63K    | 0.9705  | 0.1882 | 0.2513 | Random        |
+| Conv     | XGBoost     | N/A    | 0.9381  | 0.1511 | 0.0514 | Random        |
+| Static   | GAT         | 64K    | 0.9581  | 0.0958 | 0.0979 | Random        |
+| Temporal | TemporalGCN | 162K   | 0.9570  | 0.0637 | 0.1343 | Chronological |
+| Conv     | RF          | N/A    | 0.8603  | 0.0619 | 0.0070 | Random        |
+| Static   | GraphSAGE   | 81K    | 0.9459  | 0.0420 | 0.0946 | Random        |
+| Conv     | LR          | N/A    | 0.9378  | 0.0376 | 0.0267 | Random        |
+| Temporal | EvolveGCN-H | 578K   | 0.8972  | 0.0275 | 0.0631 | Chronological |
 
 Several patterns emerge from the cross-model comparison. First, there is a clear three-tier progression in detection quality. The best conventional model (XGBoost, AUC-PR 0.151) establishes a competitive baseline. The best static GNN (GCN, AUC-PR 0.188) adds modest but measurable value. The best temporal GNN (TGN, AUC-PR 0.320) adds substantial value, more than doubling XGBoost's AUC-PR. The progression is consistent: graph structure helps, and fine-grained temporal modelling helps decisively.
 
@@ -609,10 +598,7 @@ Fourth, parameter count and performance are uncorrelated. EvolveGCN-H has the mo
 
 **Generalizability.** The per-slice analysis in Section 4.3.3 provides evidence of temporal generalisation: TGN's performance improves as it accumulates interaction history in per-node memory, demonstrating that the model learns transferable behavioural patterns rather than memorising specific transactions. Cross-dataset generalisation to other IBM AML variants was not evaluated and is noted as a limitation in Section 5.4. The model's performance on the held-out test set, which contains transactions from a later time period than the training data, provides within-dataset evidence of generalisation to unseen temporal patterns.
 
-
-
 ---
-
 
 # Chapter 5: Discussion, Recommendations and Conclusions
 
@@ -706,14 +692,14 @@ Table 5.1 summarises the decision framework.
 
 **Table 5.1: Model selection framework for AML compliance practitioners.**
 
-| Factor | Tier 1: XGBoost | Tier 2: GCN | Tier 3: TGN |
-|--------|-----------------|-------------|-------------|
-| AUC-PR | 0.151 | 0.188 | 0.320 |
-| Precision at calibrated threshold | ~0.03 | ~0.18 | ~0.43 |
-| Infrastructure requirements | Low | Moderate | Substantial |
-| Interpretability | High (feature importance) | Moderate (node embeddings) | Moderate (memory states) |
-| Temporal dynamics | Not modelled | Not modelled | Modelled (continuous-time) |
-| Deployment complexity | Low | Moderate | High |
+| Factor                            | Tier 1: XGBoost           | Tier 2: GCN                | Tier 3: TGN                |
+| --------------------------------- | ------------------------- | -------------------------- | -------------------------- |
+| AUC-PR                            | 0.151                     | 0.188                      | 0.320                      |
+| Precision at calibrated threshold | ~0.03                     | ~0.18                      | ~0.43                      |
+| Infrastructure requirements       | Low                       | Moderate                   | Substantial                |
+| Interpretability                  | High (feature importance) | Moderate (node embeddings) | Moderate (memory states)   |
+| Temporal dynamics                 | Not modelled              | Not modelled               | Modelled (continuous-time) |
+| Deployment complexity             | Low                       | Moderate                   | High                       |
 
 **5.3.2 Precision-Recall Trade-offs and Operational Alert Burden**
 
@@ -789,10 +775,7 @@ The tool developed in this research, comprising data engineering pipelines, seve
 
 Money laundering, as a phenomenon, is both relational and temporal. It exploits the structure of financial networks and the sequencing of transactions. The detection tools built to counter it must, as this study has demonstrated, address both dimensions.
 
-
-
 ---
-
 
 # Appendices
 
@@ -806,20 +789,20 @@ Node features are computed per account from the accounts file and aggregated tra
 
 **Table A.1: Complete node feature specification.**
 
-| Index | Feature Name | Type | Source | Computation |
-|-------|-------------|------|--------|-------------|
-| 0 | bank_name | Categorical | accounts.csv | Label-encoded, then standardised (z-score) |
-| 1 | bank_id | Categorical | accounts.csv | Label-encoded, then standardised (z-score) |
-| 2 | entity_type | Categorical | accounts.csv | Extracted from Entity Name (e.g., "Corporation #33520" becomes "Corporation"), label-encoded, standardised |
-| 3 | degree_out | Numeric | transactions.csv | Number of transactions sent by this account (log1p) |
-| 4 | total_amount_out | Numeric | transactions.csv | Sum of amounts sent (log1p) |
-| 5 | avg_amount_out | Numeric | transactions.csv | Mean amount sent (log1p) |
-| 6 | num_counterparties_out | Numeric | transactions.csv | Number of unique receiving accounts (log1p) |
-| 7 | degree_in | Numeric | transactions.csv | Number of transactions received by this account (log1p) |
-| 8 | total_amount_in | Numeric | transactions.csv | Sum of amounts received (log1p) |
-| 9 | avg_amount_in | Numeric | transactions.csv | Mean amount received (log1p) |
-| 10 | num_counterparties_in | Numeric | transactions.csv | Number of unique sending accounts (log1p) |
-| 11 | degree_total | Numeric | transactions.csv | degree_out + degree_in (log1p) |
+| Index | Feature Name           | Type        | Source           | Computation                                                                                                |
+| ----- | ---------------------- | ----------- | ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| 0     | bank_name              | Categorical | accounts.csv     | Label-encoded, then standardised (z-score)                                                                 |
+| 1     | bank_id                | Categorical | accounts.csv     | Label-encoded, then standardised (z-score)                                                                 |
+| 2     | entity_type            | Categorical | accounts.csv     | Extracted from Entity Name (e.g., "Corporation #33520" becomes "Corporation"), label-encoded, standardised |
+| 3     | degree_out             | Numeric     | transactions.csv | Number of transactions sent by this account (log1p)                                                        |
+| 4     | total_amount_out       | Numeric     | transactions.csv | Sum of amounts sent (log1p)                                                                                |
+| 5     | avg_amount_out         | Numeric     | transactions.csv | Mean amount sent (log1p)                                                                                   |
+| 6     | num_counterparties_out | Numeric     | transactions.csv | Number of unique receiving accounts (log1p)                                                                |
+| 7     | degree_in              | Numeric     | transactions.csv | Number of transactions received by this account (log1p)                                                    |
+| 8     | total_amount_in        | Numeric     | transactions.csv | Sum of amounts received (log1p)                                                                            |
+| 9     | avg_amount_in          | Numeric     | transactions.csv | Mean amount received (log1p)                                                                               |
+| 10    | num_counterparties_in  | Numeric     | transactions.csv | Number of unique sending accounts (log1p)                                                                  |
+| 11    | degree_total           | Numeric     | transactions.csv | degree_out + degree_in (log1p)                                                                             |
 
 All 12 features are standardised to zero mean and unit variance using a StandardScaler fitted on the training set only. Accounts with no transaction history receive zero values for all transaction statistic features after joining.
 
@@ -829,16 +812,16 @@ Edge features are computed per transaction. Amount features are log1p-transforme
 
 **Table A.2: Complete edge feature specification.**
 
-| Index | Feature Name | Type | Source | Computation |
-|-------|-------------|------|--------|-------------|
-| 0 | amount_log1p | Numeric | transactions.csv | log1p(Amount Received), standardised |
-| 1 | hour_sin | Numeric | transactions.csv | sin(2 * pi * hour / 24), standardised |
-| 2 | hour_cos | Numeric | transactions.csv | cos(2 * pi * hour / 24), standardised |
-| 3 | dow_sin | Numeric | transactions.csv | sin(2 * pi * day_of_week / 7), standardised |
-| 4 | dow_cos | Numeric | transactions.csv | cos(2 * pi * day_of_week / 7), standardised |
-| 5 | amount_paid_log1p | Numeric | transactions.csv | log1p(Amount Paid), standardised |
-| 6-12 | pmt_{category} | One-hot (7) | transactions.csv | Payment Format one-hot: ACH, Cheque, Credit Card, Domestic Wire, International Wire, Cash, Unknown. Exactly one column = 1 per transaction. |
-| 13-27 | cur_{code} | One-hot (15) | transactions.csv | Currency one-hot: one column per currency code (USD, EUR, GBP, etc.). Exactly one column = 1 per transaction. |
+| Index | Feature Name      | Type         | Source           | Computation                                                                                                                                 |
+| ----- | ----------------- | ------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0     | amount_log1p      | Numeric      | transactions.csv | log1p(Amount Received), standardised                                                                                                        |
+| 1     | hour_sin          | Numeric      | transactions.csv | sin(2 * pi * hour / 24), standardised                                                                                                       |
+| 2     | hour_cos          | Numeric      | transactions.csv | cos(2 * pi * hour / 24), standardised                                                                                                       |
+| 3     | dow_sin           | Numeric      | transactions.csv | sin(2 * pi * day_of_week / 7), standardised                                                                                                 |
+| 4     | dow_cos           | Numeric      | transactions.csv | cos(2 * pi * day_of_week / 7), standardised                                                                                                 |
+| 5     | amount_paid_log1p | Numeric      | transactions.csv | log1p(Amount Paid), standardised                                                                                                            |
+| 6-12  | pmt_{category}    | One-hot (7)  | transactions.csv | Payment Format one-hot: ACH, Cheque, Credit Card, Domestic Wire, International Wire, Cash, Unknown. Exactly one column = 1 per transaction. |
+| 13-27 | cur_{code}        | One-hot (15) | transactions.csv | Currency one-hot: one column per currency code (USD, EUR, GBP, etc.). Exactly one column = 1 per transaction.                               |
 
 **A.3 Feature Engineering Design Notes**
 
@@ -922,6 +905,7 @@ The `--grad_clip 0` argument is critical: with `pos_weight=12.4`, gradient clipp
 **B.4 Data Splits**
 
 All splits are chronological (time-based):
+
 1. Transactions are sorted by their Unix timestamp.
 2. The earliest 70% of edges are assigned to training.
 3. The next 15% are assigned to validation.
@@ -935,17 +919,17 @@ The chronological split ensures that models are trained on past transactions and
 
 Running all reproduction commands produces the following expected metrics (minor variation may occur if library versions differ):
 
-| Model | AUC-ROC | AUC-PR | F1 |
-|-------|---------|--------|-----|
-| Logistic Regression | 0.9378 | 0.0376 | 0.0267 |
-| Random Forest | 0.8603 | 0.0619 | 0.0070 |
-| XGBoost | 0.9381 | 0.1511 | 0.0514 |
-| GCN | 0.9705 | 0.1882 | 0.2513 |
-| GAT | 0.9581 | 0.0958 | 0.0979 |
-| GraphSAGE | 0.9459 | 0.0420 | 0.0946 |
-| TemporalGCN | 0.9570 | 0.0637 | 0.1343 |
-| EvolveGCN-H | 0.8972 | 0.0275 | 0.0631 |
-| TGN | 0.9684 | 0.3195 | 0.3527 |
+| Model               | AUC-ROC | AUC-PR | F1     |
+| ------------------- | ------- | ------ | ------ |
+| Logistic Regression | 0.9378  | 0.0376 | 0.0267 |
+| Random Forest       | 0.8603  | 0.0619 | 0.0070 |
+| XGBoost             | 0.9381  | 0.1511 | 0.0514 |
+| GCN                 | 0.9705  | 0.1882 | 0.2513 |
+| GAT                 | 0.9581  | 0.0958 | 0.0979 |
+| GraphSAGE           | 0.9459  | 0.0420 | 0.0946 |
+| TemporalGCN         | 0.9570  | 0.0637 | 0.1343 |
+| EvolveGCN-H         | 0.8972  | 0.0275 | 0.0631 |
+| TGN                 | 0.9684  | 0.3195 | 0.3527 |
 
 **B.6 Project Structure**
 
@@ -970,11 +954,13 @@ This appendix declares the use of generative AI tools in the preparation of this
 **Tool used:** Claude Code (Anthropic), powered by Claude Opus 4.7.
 
 **Nature of use:**
+
 - Assistance with drafting and revising report chapter text based on experimental results, methodological documentation, and supervisor feedback provided by the author.
 - Formatting of tables and structural organisation of report content.
 - Code review and documentation of the software tool developed for this research.
 
 **Nature of author contribution:**
+
 - All experimental design, implementation, and execution was performed by the author.
 - All research questions, methodological decisions, and conclusions were formulated by the author.
 - All literature review, citation selection, and theoretical framework development was performed by the author.
@@ -990,42 +976,38 @@ This appendix reproduces the complete results from Chapter 4 for reference. The 
 
 **Table D.1: Conventional ML baseline results (random 70/15/15 split, threshold 0.50).**
 
-| Model | AUC-ROC | AUC-PR | Precision | Recall | F1 |
-|-------|---------|--------|-----------|--------|-----|
-| Logistic Regression | 0.9378 | 0.0376 | 0.0135 | 0.9295 | 0.0267 |
-| Random Forest | 0.8603 | 0.0619 | 0.0035 | 0.9148 | 0.0070 |
-| XGBoost | 0.9381 | 0.1511 | 0.0265 | 0.8610 | 0.0514 |
+| Model               | AUC-ROC | AUC-PR | Precision | Recall | F1     |
+| ------------------- | ------- | ------ | --------- | ------ | ------ |
+| Logistic Regression | 0.9378  | 0.0376 | 0.0135    | 0.9295 | 0.0267 |
+| Random Forest       | 0.8603  | 0.0619 | 0.0035    | 0.9148 | 0.0070 |
+| XGBoost             | 0.9381  | 0.1511 | 0.0265    | 0.8610 | 0.0514 |
 
 **Table D.2: Static GNN results (random 70/15/15 split, calibrated thresholds).**
 
-| Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
-|-------|--------|---------|--------|-----------|--------|-----|--------|
-| GCN | 63,489 | 0.9705 | 0.1882 | 0.1846 | 0.3933 | 0.2513 | 0.7029 |
-| GAT (1 head) | 64,001 | 0.9581 | 0.0958 | 0.0539 | 0.5317 | 0.0979 | 0.5544 |
-| GraphSAGE | 81,409 | 0.9459 | 0.0420 | 0.0563 | 0.2953 | 0.0946 | 0.4852 |
+| Model        | Params | AUC-ROC | AUC-PR | Precision | Recall | F1     | Thresh |
+| ------------ | ------ | ------- | ------ | --------- | ------ | ------ | ------ |
+| GCN          | 63,489 | 0.9705  | 0.1882 | 0.1846    | 0.3933 | 0.2513 | 0.7029 |
+| GAT (1 head) | 64,001 | 0.9581  | 0.0958 | 0.0539    | 0.5317 | 0.0979 | 0.5544 |
+| GraphSAGE    | 81,409 | 0.9459  | 0.0420 | 0.0563    | 0.2953 | 0.0946 | 0.4852 |
 
 **Table D.3: Temporal GNN results (chronological split, calibrated thresholds).**
 
-| Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
-|-------|--------|---------|--------|-----------|--------|-----|--------|
-| TemporalGCN | 161,793 | 0.9570 | 0.0637 | 0.1177 | 0.1563 | 0.1343 | 0.7326 |
-| EvolveGCN-H | 578,369 | 0.8972 | 0.0275 | 0.0465 | 0.0982 | 0.0631 | 0.7029 |
-| EvolveGCN-H (rank=8) | 33M | N/A | N/A | N/A | N/A | N/A | N/A |
-| TGN | 119,000 | 0.9684 | 0.3195 | 0.4257 | 0.3011 | 0.3527 | 0.4159 |
+| Model                | Params  | AUC-ROC | AUC-PR | Precision | Recall | F1     | Thresh |
+| -------------------- | ------- | ------- | ------ | --------- | ------ | ------ | ------ |
+| TemporalGCN          | 161,793 | 0.9570  | 0.0637 | 0.1177    | 0.1563 | 0.1343 | 0.7326 |
+| EvolveGCN-H          | 578,369 | 0.8972  | 0.0275 | 0.0465    | 0.0982 | 0.0631 | 0.7029 |
+| EvolveGCN-H (rank=8) | 33M     | N/A     | N/A    | N/A       | N/A    | N/A    | N/A    |
+| TGN                  | 119,000 | 0.9684  | 0.3195 | 0.4257    | 0.3011 | 0.3527 | 0.4159 |
 
 **Table D.4: TGN per-slice performance (12 equal chronological test set slices, threshold 0.50).**
 
-| Slice | AUC-ROC | AUC-PR | Precision | Recall |
-|-------|---------|--------|-----------|--------|
-| 0 (earliest test) | 0.9205 | 0.0502 | 0.0000 | 0.0000 |
-| 3 | 0.9280 | 0.0853 | 0.6000 | 0.0405 |
-| 6 | 0.9714 | 0.0712 | 0.0000 | 0.0000 |
-| 9 | 0.9591 | 0.0769 | 0.1294 | 0.1028 |
-| 10 | 0.9563 | 0.1875 | 0.1553 | 0.3617 |
-| 11 (latest test) | 0.9732 | 0.4518 | 0.5749 | 0.3300 |
-
-
+| Slice             | AUC-ROC | AUC-PR | Precision | Recall |
+| ----------------- | ------- | ------ | --------- | ------ |
+| 0 (earliest test) | 0.9205  | 0.0502 | 0.0000    | 0.0000 |
+| 3                 | 0.9280  | 0.0853 | 0.6000    | 0.0405 |
+| 6                 | 0.9714  | 0.0712 | 0.0000    | 0.0000 |
+| 9                 | 0.9591  | 0.0769 | 0.1294    | 0.1028 |
+| 10                | 0.9563  | 0.1875 | 0.1553    | 0.3617 |
+| 11 (latest test)  | 0.9732  | 0.4518 | 0.5749    | 0.3300 |
 
 ---
-
-

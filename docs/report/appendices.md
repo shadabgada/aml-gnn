@@ -155,14 +155,14 @@ Running all reproduction commands produces the following expected metrics (minor
 
 ```
 src/
-├── data/           — Data loading, feature engineering, graph construction
-├── models/         — Model implementations (GCN, GAT, GraphSAGE, TemporalGNN, TGN, baselines)
-├── training/       — Training loops and evaluation harness
-└── utils/          — Configuration, metrics, logging
+├── data/           - Data loading, feature engineering, graph construction
+├── models/         - Model implementations (GCN, GAT, GraphSAGE, TemporalGNN, TGN, baselines)
+├── training/       - Training loops and evaluation harness
+└── utils/          - Configuration, metrics, logging
 
-experiments/        — CLI runners for each model tier
-docs/               — RESULTS.md, THESIS_NARRATIVE.md, report chapters
-results/            — Training logs and model checkpoints
+experiments/        - CLI runners for each model tier
+docs/               - RESULTS.md, THESIS_NARRATIVE.md, report chapters
+results/            - Training logs and model checkpoints
 ```
 
 ---
@@ -214,7 +214,7 @@ This appendix reproduces the complete results from Chapter 4 for reference. The 
 |-------|--------|---------|--------|-----------|--------|-----|--------|
 | TemporalGCN | 161,793 | 0.9570 | 0.0637 | 0.1177 | 0.1563 | 0.1343 | 0.7326 |
 | EvolveGCN-H | 578,369 | 0.8972 | 0.0275 | 0.0465 | 0.0982 | 0.0631 | 0.7029 |
-| EvolveGCN-H (rank=8) | 33M | — | — | — | — | — | — |
+| EvolveGCN-H (rank=8) | 33M | N/A | N/A | N/A | N/A | N/A | N/A |
 | TGN | 119,000 | 0.9684 | 0.3195 | 0.4257 | 0.3011 | 0.3527 | 0.4159 |
 
 **Table D.4: TGN per-slice performance (12 equal chronological test set slices, threshold 0.50).**

@@ -581,12 +581,12 @@ Table 4.6 presents all nine models in a unified leaderboard, ordered by AUC-PR. 
 |------|-------|--------|---------|--------|-----|------------|
 | Temporal | TGN | 119K | 0.9684 | 0.3195 | 0.3527 | Chronological |
 | Static | GCN | 63K | 0.9705 | 0.1882 | 0.2513 | Random |
-| Conv | XGBoost | â€” | 0.9381 | 0.1511 | 0.0514 | Random |
+| Conv | XGBoost | N/A | 0.9381 | 0.1511 | 0.0514 | Random |
 | Static | GAT | 64K | 0.9581 | 0.0958 | 0.0979 | Random |
 | Temporal | TemporalGCN | 162K | 0.9570 | 0.0637 | 0.1343 | Chronological |
-| Conv | RF | â€” | 0.8603 | 0.0619 | 0.0070 | Random |
+| Conv | RF | N/A | 0.8603 | 0.0619 | 0.0070 | Random |
 | Static | GraphSAGE | 81K | 0.9459 | 0.0420 | 0.0946 | Random |
-| Conv | LR | â€” | 0.9378 | 0.0376 | 0.0267 | Random |
+| Conv | LR | N/A | 0.9378 | 0.0376 | 0.0267 | Random |
 | Temporal | EvolveGCN-H | 578K | 0.8972 | 0.0275 | 0.0631 | Chronological |
 
 Several patterns emerge from the cross-model comparison. First, there is a clear three-tier progression in detection quality. The best conventional model (XGBoost, AUC-PR 0.151) establishes a competitive baseline. The best static GNN (GCN, AUC-PR 0.188) adds modest but measurable value. The best temporal GNN (TGN, AUC-PR 0.320) adds substantial value, more than doubling XGBoost's AUC-PR. The progression is consistent: graph structure helps, and fine-grained temporal modelling helps decisively.
@@ -951,14 +951,14 @@ Running all reproduction commands produces the following expected metrics (minor
 
 ```
 src/
-â”œâ”€â”€ data/           â€” Data loading, feature engineering, graph construction
-â”œâ”€â”€ models/         â€” Model implementations (GCN, GAT, GraphSAGE, TemporalGNN, TGN, baselines)
-â”œâ”€â”€ training/       â€” Training loops and evaluation harness
-â””â”€â”€ utils/          â€” Configuration, metrics, logging
+â”œâ”€â”€ data/           - Data loading, feature engineering, graph construction
+â”œâ”€â”€ models/         - Model implementations (GCN, GAT, GraphSAGE, TemporalGNN, TGN, baselines)
+â”œâ”€â”€ training/       - Training loops and evaluation harness
+â””â”€â”€ utils/          - Configuration, metrics, logging
 
-experiments/        â€” CLI runners for each model tier
-docs/               â€” RESULTS.md, THESIS_NARRATIVE.md, report chapters
-results/            â€” Training logs and model checkpoints
+experiments/        - CLI runners for each model tier
+docs/               - RESULTS.md, THESIS_NARRATIVE.md, report chapters
+results/            - Training logs and model checkpoints
 ```
 
 ---
@@ -1010,7 +1010,7 @@ This appendix reproduces the complete results from Chapter 4 for reference. The 
 |-------|--------|---------|--------|-----------|--------|-----|--------|
 | TemporalGCN | 161,793 | 0.9570 | 0.0637 | 0.1177 | 0.1563 | 0.1343 | 0.7326 |
 | EvolveGCN-H | 578,369 | 0.8972 | 0.0275 | 0.0465 | 0.0982 | 0.0631 | 0.7029 |
-| EvolveGCN-H (rank=8) | 33M | â€” | â€” | â€” | â€” | â€” | â€” |
+| EvolveGCN-H (rank=8) | 33M | N/A | N/A | N/A | N/A | N/A | N/A |
 | TGN | 119,000 | 0.9684 | 0.3195 | 0.4257 | 0.3011 | 0.3527 | 0.4159 |
 
 **Table D.4: TGN per-slice performance (12 equal chronological test set slices, threshold 0.50).**

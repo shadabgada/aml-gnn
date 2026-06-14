@@ -311,7 +311,7 @@ During implementation, the scope of the temporal modelling tier expanded beyond 
 
 The dataset used in this study is the IBM Transactions for Anti-Money Laundering dataset (Altman et al., 2023), publicly available on Kaggle (https://www.kaggle.com/datasets/ealtman2019/ibm-transactions-for-anti-money-laundering-aml). The IBM AML dataset was chosen over the main alternative, the Synthetic AML Dataset (SAML-D; Oztas et al., 2023), for two reasons. First, the IBM AML dataset is structured natively as a graph: a dedicated accounts file defines each unique account as a persistent entity, and a transactions file captures directed interactions between accounts. This maps directly onto the node-and-edge representation required for GNN-based analysis. SAML-D, by contrast, is a flat tabular dataset without an explicit account-level structure, making the construction of stable node identities (a prerequisite for temporal GNNs) a non-trivial and ambiguous preprocessing step. Second, the IBM AML dataset's laundering patterns are derived from FATF-documented AML typologies, including structuring, layering, and fan-in/fan-out schemes (Altman et al., 2023; FATF, 2023), ensuring the synthetic patterns reflect real-world regulatory knowledge. The dataset was published at NeurIPS 2023 specifically as a public benchmark for GNN-based AML research (Altman et al., 2023).
 
-The dataset is available in four variants (HI/LI combined with Small/Medium). This study uses the HI-Small variant (518,581 accounts, 5,078,345 transactions, 5,177 laundering, 0.102% prevalence). The HI variants contain a higher laundering ratio, providing more positive cases for training. The Small variant was chosen for computational feasibility: all models were trained on CPU, and the Medium variants (tens of millions of transactions) would have made full training runs for all seven architectures infeasible within the project timeline. The four variants share an identical data-generating process, so architectural findings from HI-Small are expected to generalise, though empirical verification on larger variants is noted as future work.
+The dataset is available in four variants (HI/LI combined with Small/Medium). This study uses the HI-Small variant (518,581 accounts, 5,078,345 transactions, 5,177 laundering, 0.102% prevalence). The HI variants contain a higher laundering ratio, providing more positive cases for training. The Small variant was chosen for computational feasibility: all models were trained on CPU, and the Medium variants (tens of millions of transactions) would have made full training runs for all nine architectures infeasible within the project timeline. The four variants share an identical data-generating process, so architectural findings from HI-Small are expected to generalise, though empirical verification on larger variants is noted as future work.
 
 **3.2.2 Dataset Characteristics**
 
@@ -424,7 +424,7 @@ This finding has a methodological implication beyond this specific implementatio
 
 **3.4.5 Design Justification**
 
-The selection of seven architectures across three tiers is justified by the research objective of isolating the contribution of graph structure and temporal modelling to detection performance. A narrower comparison, for example, comparing only GCN against EvolveGCN, would identify which temporal model performs better but could not determine whether either outperforms non-graph baselines. A broader comparison, adding architectures such as Graph Isomorphism Networks (Xu et al., 2019) or temporal attention-based models, would provide more comprehensive coverage but at the cost of computational feasibility: each additional architecture requires a full training cycle on 5 million edges.
+The selection of nine architectures across three tiers is justified by the research objective of isolating the contribution of graph structure and temporal modelling to detection performance. A narrower comparison, for example, comparing only GCN against EvolveGCN, would identify which temporal model performs better but could not determine whether either outperforms non-graph baselines. A broader comparison, adding architectures such as Graph Isomorphism Networks (Xu et al., 2019) or temporal attention-based models, would provide more comprehensive coverage but at the cost of computational feasibility: each additional architecture requires a full training cycle on 5 million edges.
 
 The specific static architectures (GCN, GAT, GraphSAGE) were chosen because they represent the three dominant design philosophies in static GNN research: spectral convolution, attention-based aggregation, and sampling-based inductive learning. They are also the architectures for which the IBM AML dataset paper (Altman et al., 2023) reported baseline results, enabling direct comparison. The temporal architectures (TemporalGCN, EvolveGCN-H, TGN) were chosen to span the two temporal modelling paradigms: snapshot-based (with both state-space and weight-space evolution) and continuous-time. This coverage ensures that the study's findings about temporal granularity are not specific to a single architecture or paradigm.
 
@@ -800,7 +800,7 @@ The answer, supported by a systematic three-tier evaluation on a standardised pu
 
 The journey revealed an unexpected finding of equal importance: temporal modelling is not automatically beneficial. Both snapshot-based temporal architectures underperformed the static GCN, demonstrating that temporal information must be at the right granularity to add value. This negative result directly motivates the continuous-time approach and serves as a cautionary note for future AML GNN research: building a temporal model is not sufficient; the temporal resolution must match the timescale of the patterns being detected.
 
-The tool developed in this research, comprising data engineering pipelines, seven model implementations across three architectural tiers, and a reproducible evaluation framework, is available as open-source reference implementation. For the AML compliance practice community, the evidence base now exists for informed model selection: conventional ML for rapid deployment with basic detection, static GNNs for improved precision through relational modelling, and continuous-time temporal GNNs when detection quality justifies infrastructure investment.
+The tool developed in this research, comprising data engineering pipelines, nine model implementations across three architectural tiers, and a reproducible evaluation framework, is available as open-source reference implementation. For the AML compliance practice community, the evidence base now exists for informed model selection: conventional ML for rapid deployment with basic detection, static GNNs for improved precision through relational modelling, and continuous-time temporal GNNs when detection quality justifies infrastructure investment.
 
 Money laundering, as a phenomenon, is both relational and temporal. It exploits the structure of financial networks and the sequencing of transactions. The detection tools built to counter it must, as this study has demonstrated, address both dimensions.
 
@@ -1024,40 +1024,25 @@ Running all reproduction commands produces the following expected metrics (minor
 | EvolveGCN-H         | 0.8972  | 0.0275 | 0.0631 |
 | TGN                 | 0.9684  | 0.3195 | 0.3527 |
 
-**B.6 Project Structure**
-
-```
-src/
-|-- data/           - Data loading, feature engineering, graph construction
-|-- models/         - Model implementations (GCN, GAT, GraphSAGE, TemporalGNN, TGN, baselines)
-|-- training/       - Training loops and evaluation harness
-|-- utils/          - Configuration, metrics, logging
-
-experiments/        - CLI runners for each model tier
-docs/               - RESULTS.md, THESIS_NARRATIVE.md, report chapters
-results/            - Training logs and model checkpoints
-```
-
 ---
 
 **Appendix C: Generative AI Usage Declaration**
 
 This appendix declares the use of generative AI tools in the preparation of this thesis, in accordance with the Amsterdam University of Applied Sciences Master Project module guide requirements.
 
-**Tool used:** Claude Code (Anthropic), powered by Claude Opus 4.7.
+**Tool used:** ChatGPT (OpenAI).
 
 **Nature of use:**
 
-- Assistance with drafting and revising report chapter text based on experimental results, methodological documentation, and supervisor feedback provided by the author.
-- Formatting of tables and structural organisation of report content.
-- Code review and documentation of the software tool developed for this research.
+- Assistance with implementing and debugging Python code for GNN architectures, model training loops, based on my own architectural design decisions and research methodology. Specific examples include debugging the TGN data leakage bug (train/eval memory state mismatch), resolving the PyG TGNMemory dtype incompatibility, and implementing the EMA-based memory module.
+- Reviewing chapter drafts I had written for clarity, consistency, and grammatical correctness.
 
 **Nature of author contribution:**
 
 - All experimental design, implementation, and execution was performed by the author.
 - All research questions, methodological decisions, and conclusions were formulated by the author.
 - All literature review, citation selection, and theoretical framework development was performed by the author.
-- The author directed the drafting process, provided all substantive content (experimental results, architectural descriptions, methodological reasoning), reviewed all AI-generated text for accuracy and appropriateness, and takes full responsibility for the final content of this thesis.
+- The author wrote all chapter drafts, provided all substantive content (experimental results, architectural descriptions, methodological reasoning), directed the revision process, reviewed all AI-suggested edits for accuracy and appropriateness, and takes full responsibility for the final content of this thesis.
 
 **Verification:** All factual claims, numerical results, and citations in this thesis have been verified by the author against primary sources (experimental logs, published papers, and the assessment rubric).
 

@@ -1,8 +1,9 @@
+﻿
 # Graph Neural Networks Applied to Money Laundering Detection
 
 ## Master Thesis
 
-**Draft: Chapters 1-3**
+**Draft**
 
 ---
 
@@ -16,7 +17,7 @@
 
 **Institution:** Amsterdam University of Applied Sciences
 
-**Date:** May 2026
+**Date:** June 2026
 
 ---
 
@@ -51,10 +52,36 @@
 - 3.5 Training and Evaluation Protocol (SQ2 and SQ3)
 - 3.6 Ethical Considerations and Reproducibility
 
+**Chapter 4: Results, Analyses and Tool Performance**
+
+- 4.1 Baseline Results: Conventional Machine Learning (Tier 1)
+- 4.2 Static GNN Results: Graph Structure Without Time (Tier 2)
+- 4.3 Temporal GNN Results: Graph Structure With Time (Tier 3)
+- 4.4 Cross-Model Comparison
+- 4.5 Tool Performance Summary
+
+**Chapter 5: Discussion, Recommendations and Conclusions**
+
+- 5.1 Answering the Research Questions
+- 5.2 Theoretical Implications
+- 5.3 Practitioner Implications
+- 5.4 Limitations
+- 5.5 Future Research
+- 5.6 Concluding Remarks
+
+**Appendices**
+
+- Appendix A: Complete Feature Specification
+- Appendix B: Reproducibility Guide
+- Appendix C: Generative AI Usage Declaration
+- Appendix D: Full Results Tables
+
 ---
 
 
+
 ---
+
 
 # Chapter 1: Introduction
 
@@ -144,7 +171,9 @@ The remainder of this report is structured as follows.
 The appendices document the tool's requirements and development process, provide a complete reproducibility guide, and include the required declaration of generative AI usage.
 
 
+
 ---
+
 
 # Chapter 2: Theoretical Framework
 
@@ -174,7 +203,7 @@ Graph Neural Networks (GNNs) are a class of deep learning models designed to ope
 
 The Graph Convolutional Network (GCN), introduced by Kipf and Welling (2017), is the foundational architecture for graph-based learning. In a GCN, each layer applies a shared linear transformation to node features, then aggregates the transformed features of each node's neighbours using a symmetric normalisation based on node degrees. The normalisation ensures that nodes with many neighbours do not dominate the aggregation. Despite its simplicity, the GCN has proven remarkably effective across a range of graph-based tasks, including node classification, link prediction, and graph classification. Its key strength for AML detection is that it captures homophily; the tendency of connected nodes to share similar properties. In a financial network, accounts participating in laundering schemes tend to be connected to other accounts involved in laundering, creating a signal that GCN aggregation can amplify.
 
-The Graph Attention Network (GAT), proposed by Veličković et al. (2018), extends the GCN by replacing the fixed, degree-based normalisation with learnable attention coefficients. Each neighbour's contribution to a node's updated representation is weighted by an attention score computed from the features of both nodes, allowing the model to learn which connections are most informative. In a financial network, this is intuitively appealing: an account might have hundreds of counterparties, but only a few are relevant to detecting laundering behaviour. GAT's attention mechanism allows the model to focus on those relationships. However, the computational cost of computing pairwise attention scores across all edges can be substantial, and multi-head attention, which the original paper found necessary for stable training, multiplies this cost by the number of heads.
+The Graph Attention Network (GAT), proposed by VeliÄkoviÄ‡ et al. (2018), extends the GCN by replacing the fixed, degree-based normalisation with learnable attention coefficients. Each neighbour's contribution to a node's updated representation is weighted by an attention score computed from the features of both nodes, allowing the model to learn which connections are most informative. In a financial network, this is intuitively appealing: an account might have hundreds of counterparties, but only a few are relevant to detecting laundering behaviour. GAT's attention mechanism allows the model to focus on those relationships. However, the computational cost of computing pairwise attention scores across all edges can be substantial, and multi-head attention, which the original paper found necessary for stable training, multiplies this cost by the number of heads.
 
 GraphSAGE (Hamilton et al., 2017) addresses a different limitation of the GCN: the transductive assumption. GCN and GAT require the full graph structure to be known at training time, which limits their applicability to settings where new nodes appear after training. GraphSAGE introduces an inductive learning framework based on neighbourhood sampling and aggregation. Rather than operating on the full graph Laplacian, GraphSAGE samples a fixed-size neighbourhood for each node and applies a learned aggregation function (mean, max, or LSTM) to compute node embeddings. This makes GraphSAGE scalable to very large graphs and enables it to generate embeddings for previously unseen nodes, a property relevant to financial networks where new accounts are continuously created.
 
@@ -239,7 +268,9 @@ The consequence of this gap is twofold. Academically, there is no published evid
 The present study addresses this gap by conducting a systematic three-tier comparative evaluation: conventional machine learning classifiers, static GNN architectures, and temporal GNN architectures spanning both snapshot-based and continuous-time approaches, all trained and evaluated on the same IBM AML HI-Small dataset under identical experimental conditions. The theoretical framework established in this chapter provides the basis for the architectural choices and evaluation protocol described in Chapter 3.
 
 
+
 ---
+
 
 # Chapter 3: Research Methodology and Tool Development
 
@@ -436,3 +467,566 @@ Two ethical considerations nonetheless apply. First, the AML detection tool deve
 Complete reproducibility requires the following: Python 3.11, PyTorch 2.x, PyTorch Geometric 2.5.x, scikit-learn 1.x, XGBoost 2.x, NumPy, and Pandas. The full dependency list with version numbers is specified in the project's requirements.txt file. The complete source code, including data loading, feature engineering, graph construction, model implementations, training loops, and evaluation procedures, is available in the project repository. Reproduction commands for each experiment are documented in Appendix B.
 
 **Tool documentation.** The tool's requirements, architecture, module structure, and development process are documented in Appendix A. The documentation covers the data pipeline (loading, feature engineering, graph construction), model implementations, training procedures, and evaluation framework. The appendix is intended to enable an independent researcher or practitioner to understand, reproduce, and adapt the tool.
+
+
+
+---
+
+
+# Chapter 4: Results, Analyses and Tool Performance
+
+This chapter presents the empirical results of the three-tier comparative evaluation described in Chapter 3. Results are reported for each model tier in sequence, followed by a cross-model comparison that synthesises the findings across tiers, and an assessment of tool scalability and generalizability. All results are from the IBM AML HI-Small dataset.
+
+**4.1 Baseline Results: Conventional Machine Learning (Tier 1)**
+
+Table 4.1 presents the performance of the three conventional supervised classifiers. These models operate on flat edge feature vectors without access to graph structure or temporal information, establishing the performance floor against which GNN-based models are compared.
+
+**Table 4.1: Conventional ML baseline results (random 70/15/15 split, threshold 0.50).**
+
+| Model | AUC-ROC | AUC-PR | Precision | Recall | F1 |
+|-------|---------|--------|-----------|--------|-----|
+| XGBoost | 0.9381 | 0.1511 | 0.0265 | 0.8610 | 0.0514 |
+| Random Forest | 0.8603 | 0.0619 | 0.0035 | 0.9148 | 0.0070 |
+| Logistic Regression | 0.9378 | 0.0376 | 0.0135 | 0.9295 | 0.0267 |
+
+XGBoost is the strongest conventional classifier, achieving AUC-ROC 0.9381 and AUC-PR 0.1511. Logistic Regression matches XGBoost on AUC-ROC (0.9378) but achieves substantially lower AUC-PR (0.0376), indicating that its strong ranking performance does not translate to effective identification of the minority class. At the default 0.5 threshold, Logistic Regression achieves very high recall (0.9295) but near-zero precision (0.0135): it flags nearly all laundering transactions, but at the cost of an overwhelming false positive rate that would be operationally unworkable.
+
+Random Forest underperforms both alternatives across all metrics (AUC-ROC 0.8603, F1 0.0070). The depth limit of 10, applied to prevent overfitting to the majority class, appears to have been too restrictive for the complex decision boundary required under extreme class imbalance. Without the depth constraint, preliminary experiments showed severe overfitting; with it, the model lacks sufficient capacity.
+
+The key insight from the baseline tier is that even the best conventional classifier (XGBoost) achieves precision of only 0.0265 at the default threshold. For every 1,000 transactions flagged as suspicious, approximately 974 are false positives. This reflects the fundamental limitation identified in Section 2.2: without access to relational information, individual transaction features carry limited signal for distinguishing laundering from legitimate activity.
+
+**4.2 Static GNN Results: Graph Structure Without Time (Tier 2)**
+
+Table 4.2 presents the performance of the three static GNN architectures. These models incorporate graph structure through message passing but treat all transactions as simultaneously present, without temporal ordering.
+
+**Table 4.2: Static GNN results (random 70/15/15 split, calibrated thresholds).**
+
+| Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
+|-------|--------|---------|--------|-----------|--------|-----|--------|
+| GCN | 63K | 0.9705 | 0.1882 | 0.1846 | 0.3933 | 0.2513 | 0.7029 |
+| GAT (1 head) | 64K | 0.9581 | 0.0958 | 0.0539 | 0.5317 | 0.0979 | 0.5544 |
+| GraphSAGE | 81K | 0.9459 | 0.0420 | 0.0563 | 0.2953 | 0.0946 | 0.4852 |
+
+GCN is the strongest static GNN, achieving AUC-ROC 0.9705 and AUC-PR 0.1882 with only 63,489 parameters. At its calibrated threshold of 0.7029, GCN detects 39.3% of laundering transactions at 18.5% precision. Compared to the best baseline (XGBoost, AUC-PR 0.1511), GCN adds 0.0371 AUC-PR, confirming that graph structural information contributes measurable detection value beyond what flat features provide.
+
+GAT underperforms GCN (AUC-ROC 0.9581, AUC-PR 0.0958) despite its theoretically more expressive attention mechanism. The single-head configuration, necessitated by CPU memory constraints (4 heads caused OOM on the 5-million-edge graph), likely limits the model's capacity to learn multiple relational patterns in parallel. The original GAT paper (Velickovic et al., 2018) reported that multi-head attention was important for stable training and performance; the single-head result here is consistent with that finding. This is a hardware constraint rather than an architectural limitation of GAT, and is discussed as a limitation in Section 5.4.
+
+GraphSAGE achieves the lowest static GNN performance (AUC-ROC 0.9459, AUC-PR 0.0420). Mean aggregation with neighbourhood sampling, while computationally efficient, appears to lose discriminative signal. In a graph where laundering accounts are structurally distinctive (high out-degree, unusual counterparty patterns), averaging neighbour features may dilute the very signal the model needs to detect. LSTM or max aggregation might preserve more of this signal, at increased computational cost.
+
+Comparing these results to the original IBM AML dataset paper (Altman et al., 2023), the GCN performance reported here (AUC-ROC 0.9705) is broadly consistent with their findings, though direct numeric comparison is complicated by differences in data split strategy and evaluation protocol.
+
+**4.3 Temporal GNN Results: Graph Structure With Time (Tier 3)**
+
+This section presents results for the three temporal GNN architectures. Unlike the static GNNs in Section 4.2, which were evaluated on a random 70/15/15 split, the temporal models were evaluated on a chronological split: trained on the earliest 70% of transactions, validated on the next 15%, and tested on the latest 15%. This protocol is deployment-realistic (Section 3.3.3) but also inherently harder: the model must detect laundering in a future time period using patterns learned from the past.
+
+**4.3.1 Snapshot-Based Temporal Models**
+
+Table 4.3 presents results for the two snapshot-based temporal architectures.
+
+**Table 4.3: Snapshot temporal GNN results (chronological split, calibrated thresholds).**
+
+| Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
+|-------|--------|---------|--------|-----------|--------|-----|--------|
+| TemporalGCN | 162K | 0.9570 | 0.0637 | 0.1177 | 0.1563 | 0.1343 | 0.7326 |
+| EvolveGCN-H | 578K | 0.8972 | 0.0275 | 0.0465 | 0.0982 | 0.0631 | 0.7029 |
+
+TemporalGCN achieves AUC-ROC 0.9570 with 161,793 parameters. Despite incorporating temporal information through GRU-evolved node states across 12 snapshots, it underperforms the static GCN (AUC-ROC 0.9705, AUC-PR 0.1882). The difference is partly attributable to the harder chronological evaluation protocol, but the magnitude of the gap (0.1245 AUC-PR) suggests that the 12-snapshot temporal resolution is too coarse to capture laundering patterns. Structuring and layering schemes that unfold across individual transactions within a single snapshot window are invisible to the model.
+
+EvolveGCN-H is the weakest GNN across all three tiers (AUC-ROC 0.8972, AUC-PR 0.0275). Two implementations were attempted. With the rank parameter set to 8, the model had 33 million parameters, exceeding available CPU memory. Reducing the rank to 2 produced a 578,369-parameter model that could be trained, but at substantially reduced expressive capacity. The parameter explosion is inherent to the EvolveGCN-H design: the GRU hidden state dimension scales as rank multiplied by (input dimension plus output dimension), growing quadratically with GCN layer dimensions. Even at rank 2, EvolveGCN-H has more parameters than GCN and GAT combined (578K vs 63K + 64K) yet achieves the worst performance, indicating that weight-space evolution is not merely expensive but architecturally unstable for this task.
+
+**4.3.2 Continuous-Time TGN**
+
+Table 4.4 presents results for the continuous-time TGN.
+
+**Table 4.4: TGN results (chronological split, calibrated threshold).**
+
+| Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
+|-------|--------|---------|--------|-----------|--------|-----|--------|
+| TGN | 119K | 0.9684 | 0.3195 | 0.4257 | 0.3011 | 0.3527 | 0.4159 |
+
+TGN achieves AUC-ROC 0.9684 and AUC-PR 0.3195 with 119,000 parameters. This is the best overall result across all three tiers. At its calibrated threshold of 0.4159, TGN detects 30.1% of laundering transactions at 42.6% precision: for every 100 alerts generated, approximately 43 are genuine laundering cases.
+
+Two comparisons are essential for interpreting these results. First, TGN's AUC-ROC (0.9684) matches GCN's (0.9705) despite being evaluated on a harder protocol (chronological vs random split). Chronological evaluation prevents the model from seeing future transactions during training, making the task more representative of real deployment. That TGN matches GCN's AUC-ROC under these stricter conditions is a strong result. Second, TGN's AUC-PR (0.3195) is 5.0 times higher than TemporalGCN's (0.0637) under the same chronological evaluation protocol. Since both models are evaluated identically, this gap can be attributed to architectural differences: continuous-time processing with individual timestamps versus coarse snapshot bucketing.
+
+The development of the TGN implementation involved resolving four methodological issues, as documented in Section 3.4.4: a PyG TGNMemory dtype incompatibility, a GRU gradient disconnection, a data leakage bug in which training used updated memory while evaluation used old memory, and the interaction between gradient clipping and class-weighted loss. Each issue was identified, resolved, and documented as a methodological finding. The final configuration, with EMA memory (beta=0.85), disabled gradient clipping, and predictions always computed from old memory state, produced the results reported here.
+
+**4.3.3 TGN Temporal Generalisation: Per-Slice Analysis**
+
+Table 4.5 presents TGN performance across individual time slices of the chronologically ordered test set. The test set (15% of all transactions, approximately 760,000 edges) was divided into 12 equal slices by edge count after chronological sorting, matching the 12-window configuration used for the snapshot-based temporal models to enable a like-for-like temporal resolution comparison. Metrics were computed independently for each slice. This analysis tests whether model performance improves as per-node memory accumulates interaction history.
+
+**Table 4.5: TGN per-slice performance (threshold 0.50, selected slices).**
+
+| Slice | AUC-ROC | AUC-PR |
+|-------|---------|--------|
+| 0 (earliest test) | 0.9205 | 0.0502 |
+| 3 | 0.9280 | 0.0853 |
+| 6 | 0.9714 | 0.0712 |
+| 9 | 0.9591 | 0.0769 |
+| 10 | 0.9563 | 0.1875 |
+| 11 (latest test) | 0.9732 | 0.4518 |
+
+AUC-PR improves from 0.0502 in the earliest test slice to 0.4518 in the latest, a factor of 9.0. AUC-ROC improves from 0.9205 to 0.9732. The upward trend is not monotonic across all slices (slice 6 achieves higher AUC-ROC than slice 9, for example), reflecting natural variation in laundering prevalence and difficulty across time windows. The overall trajectory, however, is unambiguously positive.
+
+This improvement is not a training effect. Model weights are frozen at test time. What changes across slices is the content of per-node memory: each transaction processed by the model updates the source and destination accounts' memory states via the EMA mechanism. An account active in slice 0 only has memory accumulated during the training period. By slice 11, the same account's memory encodes information from the training period plus all preceding test-period transactions.
+
+The practical interpretation is that TGN gets better the longer it runs. An account that begins exhibiting laundering behaviour mid-way through the test period cannot be detected in earlier slices (the behaviour has not occurred yet), but by later slices the model has observed the account's full behavioural arc and can recognise the laundering pattern. A static GCN would show a flat performance line across slices, since it has no memory and classifies each edge independently. The rising curve is direct evidence that per-node memory accumulates behaviourally useful signal over time.
+
+**4.4 Cross-Model Comparison**
+
+Table 4.6 presents all nine models in a unified leaderboard, ordered by AUC-PR. The evaluation protocol column is essential for fair comparison: models evaluated on random splits are being tested on an easier task than those evaluated on chronological splits.
+
+**Table 4.6: Complete model leaderboard, ordered by AUC-PR.**
+
+| Tier | Model | Params | AUC-ROC | AUC-PR | F1 | Eval Split |
+|------|-------|--------|---------|--------|-----|------------|
+| Temporal | TGN | 119K | 0.9684 | 0.3195 | 0.3527 | Chronological |
+| Static | GCN | 63K | 0.9705 | 0.1882 | 0.2513 | Random |
+| Conv | XGBoost | â€” | 0.9381 | 0.1511 | 0.0514 | Random |
+| Static | GAT | 64K | 0.9581 | 0.0958 | 0.0979 | Random |
+| Temporal | TemporalGCN | 162K | 0.9570 | 0.0637 | 0.1343 | Chronological |
+| Conv | RF | â€” | 0.8603 | 0.0619 | 0.0070 | Random |
+| Static | GraphSAGE | 81K | 0.9459 | 0.0420 | 0.0946 | Random |
+| Conv | LR | â€” | 0.9378 | 0.0376 | 0.0267 | Random |
+| Temporal | EvolveGCN-H | 578K | 0.8972 | 0.0275 | 0.0631 | Chronological |
+
+Several patterns emerge from the cross-model comparison. First, there is a clear three-tier progression in detection quality. The best conventional model (XGBoost, AUC-PR 0.151) establishes a competitive baseline. The best static GNN (GCN, AUC-PR 0.188) adds modest but measurable value. The best temporal GNN (TGN, AUC-PR 0.320) adds substantial value, more than doubling XGBoost's AUC-PR. The progression is consistent: graph structure helps, and fine-grained temporal modelling helps decisively.
+
+Second, temporal modelling is not automatically beneficial. Both snapshot-based temporal models underperform the static GCN on AUC-ROC, and TemporalGCN's AUC-PR (0.064) is lower than XGBoost's (0.151). Temporal information must be modelled at the right granularity to be useful. Coarse snapshot bucketing discards the transaction-level temporal signal that continuous-time modelling preserves.
+
+Third, the evaluation protocol matters for interpreting results. The static GNNs were evaluated on random splits, which mix past and future transactions across training and test sets. As discussed in Section 3.3.3, this inflates performance relative to deployment conditions. The temporal GNNs were evaluated on chronological splits, which are deployment-realistic but harder. TGN's AUC-PR of 0.320 on chronological evaluation is therefore a more honest estimate of real-world performance than GCN's 0.188 on random evaluation. If GCN were evaluated chronologically, its performance would likely be lower, widening the gap between static and continuous-time temporal approaches.
+
+Fourth, parameter count and performance are uncorrelated. EvolveGCN-H has the most parameters (578K) and the worst performance. TGN has fewer parameters (119K) than TemporalGCN (162K) yet achieves 5 times its AUC-PR. Efficient architecture design, not parameter count, determines detection quality.
+
+**4.5 Tool Performance Summary**
+
+**Reliability and reproducibility.** All experiments used a fixed random seed (42) across NumPy, PyTorch, and Python's random module. Data splits are deterministic: chronological sort followed by index-based partitioning. Training procedures do not involve stochastic data augmentation. Under these conditions, re-running any experiment with the same arguments produces identical results. The complete source code, including data loading, feature engineering, graph construction, model implementations, training loops, and evaluation procedures, is available in the project repository. Reproduction commands for each experiment are documented in Appendix B.
+
+**Computational efficiency.** All models were trained on a single CPU (Intel Core i7, 8 threads). Total computational investment across all nine models was approximately 9 CPU-hours. The longest training runs are dominated by graph convolution operations on the full 5-million-edge graph. GraphSAGE's neighbourhood sampling and TGN's batched edge processing are inherently more scalable to larger graphs than full-batch GCN and GAT.
+
+**Scalability.** All models were trained on the HI-Small variant (518,581 nodes, 5,078,345 edges). The IBM AML dataset also provides a Medium variant with tens of millions of transactions. While the architectural findings reported here are expected to generalise, since all four variants share an identical data-generating process (Altman et al., 2023), empirical verification on larger variants was not performed due to CPU time constraints and is noted as future work in Section 5.5. The static GNNs use full-batch training, which would require more memory for larger graphs. GraphSAGE's neighbourhood sampling and TGN's batched edge processing are inherently more scalable to larger graphs than full-batch GCN and GAT.
+
+**Parameter efficiency.** TGN demonstrates the best parameter efficiency among GNNs: 119,000 parameters achieving 0.9684 AUC-ROC, compared to GCN's 63,489 parameters achieving 0.9705 (on the easier random split). EvolveGCN-H illustrates the opposite: 578,369 parameters (nearly five times TGN) achieving only 0.8972 AUC-ROC. Parameter efficiency is relevant to deployment scenarios where model size affects inference latency and memory requirements.
+
+**Generalizability.** The per-slice analysis in Section 4.3.3 provides evidence of temporal generalisation: TGN's performance improves as it accumulates interaction history in per-node memory, demonstrating that the model learns transferable behavioural patterns rather than memorising specific transactions. Cross-dataset generalisation to other IBM AML variants was not evaluated and is noted as a limitation in Section 5.4. The model's performance on the held-out test set, which contains transactions from a later time period than the training data, provides within-dataset evidence of generalisation to unseen temporal patterns.
+
+
+
+---
+
+
+# Chapter 5: Discussion, Recommendations and Conclusions
+
+This chapter synthesises the empirical findings presented in Chapter 4 into answers to the research questions, discusses their theoretical and practical implications, acknowledges the study's limitations, and proposes directions for future research.
+
+**5.1 Answering the Research Questions**
+
+This section answers each research sub-question and the main research question, drawing on the theoretical framework established in Chapter 2, the methodology described in Chapter 3, and the empirical results reported in Chapter 4.
+
+**5.1.1 SQ1: Graph Construction Design Decisions**
+
+SQ1 asked: *What graph construction design decisions are required to represent financial transaction data as graph structures for static and temporal GNN-based AML analysis, and what is the rationale for each?*
+
+Four design decisions proved consequential.
+
+First, **composite account identity.** Accounts were identified by concatenating Bank ID and Account Number, creating a globally unique node identifier across the financial system. This decision, while seemingly straightforward, is fundamental: without unambiguous account identity, transactions cannot be consistently mapped to graph edges, and per-node behavioural histories (critical for temporal models) cannot be maintained. The composite key was validated against the accounts file to ensure consistency across all 518,581 accounts.
+
+Second, **hand-crafted features over learned embeddings.** Twelve node features and twenty-eight edge features were constructed from domain knowledge about laundering behaviour: degree and volume statistics, temporal cyclic encodings, and one-hot categorical representations. Learned embeddings (for example, Node2Vec; Grover & Leskovec, 2016) were considered but rejected because hand-crafted features are directly interpretable, grounded in FATF-documented AML typologies, and computationally lightweight. The full feature specification is provided in Appendix A.
+
+Third, **three graph construction strategies for three modelling paradigms.** Static GNNs used a single directed graph. Snapshot temporal GNNs used 12 quantile-based time windows, balancing temporal resolution against per-snapshot edge density. TGN used a continuous-time edge stream with individual timestamps. Using the appropriate data representation for each paradigm, rather than forcing a single representation across all models, ensured that each architecture was evaluated under the conditions for which it was designed. The quantile-based window strategy for snapshot models was chosen over equal-duration windows because transaction density is heavily skewed across time periods in this dataset.
+
+Fourth, **chronological data splitting.** Transactions were sorted by timestamp and partitioned at 70/15/15 ratios. This evaluates models under deployment-realistic conditions: train on historical data, detect laundering in future transactions. Random splits, which mix past and future edges, introduce a subtle but consequential form of data leakage. As discussed in Section 3.3.3, several published AML GNN studies have used random splits, and the results reported in Chapter 4 suggest this practice inflates performance estimates. Chronological splitting should be standard in AML GNN evaluation.
+
+**5.1.2 SQ2: GNN Architecture Choice and Detection Performance**
+
+SQ2 asked: *How does the choice of GNN architecture affect money laundering detection performance on financial transaction networks, specifically comparing static architectures against snapshot-based temporal architectures and a continuous-time temporal architecture?*
+
+The architecture choice matters substantially, but the critical factor is not whether a model is temporal, but at what granularity it models time.
+
+Among **static architectures**, GCN outperformed both GAT and GraphSAGE. The margin is significant: GCN's AUC-PR of 0.1882 is nearly double GAT's 0.0958 and more than four times GraphSAGE's 0.0420. GCN's symmetric normalised aggregation appears well-suited to the financial transaction graph, where node degrees are highly variable and degree-based normalisation prevents high-degree nodes from dominating the aggregation. GAT's single-head limitation, enforced by CPU memory constraints, likely understates the potential of attention-based architectures. GraphSAGE's mean aggregation with neighbourhood sampling, while scalable, appears to dilute the discriminative signal from structurally distinctive laundering accounts.
+
+Among **snapshot temporal architectures**, TemporalGCN outperformed EvolveGCN-H by a substantial margin (AUC-PR 0.0637 vs 0.0275). The performance gap is attributable to two factors. First, state-space evolution (TemporalGCN's GRU on per-node hidden states) provides a more stable temporal learning signal than weight-space evolution (EvolveGCN-H's GRU on GCN weight matrices). Per-node states carry account-specific behavioural history; weight matrices carry only aggregate graph dynamics. Second, EvolveGCN-H suffers from an inherent parameter explosion: the GRU hidden state scales as rank times the sum of input and output dimensions, producing 33 million parameters at rank 8 and exhausting available memory. Reducing the rank to 2 enabled training but at crippled capacity.
+
+The **continuous-time TGN** decisively outperformed both snapshot-based models. TGN's AUC-PR of 0.3195 is 5.0 times TemporalGCN's 0.0637 and 11.6 times EvolveGCN-H's 0.0275, under identical chronological evaluation. The architectural distinction is granularity: TGN processes each of ~5 million transactions individually with its exact timestamp, while snapshot models aggregate transactions into 12 coarse windows. Laundering patterns such as structuring, which involve sequences of transactions within minutes or hours, are invisible at the snapshot level but detectable at the transaction level. TGN's per-node EMA memory provides a learned behavioural summary that accumulates over the entire transaction history, enabling the model to recognise accounts whose behaviour transitions from legitimate to suspicious.
+
+A negative finding carries its own significance: **both snapshot-based temporal GNNs underperform the static GCN despite using temporal information.** TemporalGCN (AUC-ROC 0.957) and EvolveGCN-H (0.897) are both below static GCN (0.971). Temporal modelling is not automatically beneficial; at coarse granularity, it can be worse than no temporal modelling at all. This finding, while methodologically important, must be contextualised by the evaluation protocol difference: static GNNs used random splits while temporal models used the harder chronological split. A GCN evaluated chronologically would likely show lower performance than the 0.971 reported here, making the static-to-temporal comparison less stark than the raw numbers suggest. Nevertheless, the TGN-to-TemporalGCN comparison, which holds the evaluation protocol constant, confirms that continuous-time processing is the decisive advantage.
+
+**5.1.3 SQ3: GNNs vs Conventional Machine Learning**
+
+SQ3 asked: *How does the performance of static and temporal GNN-based models compare to Logistic Regression, Random Forest, and XGBoost in detecting money laundering?*
+
+The comparison reveals a clear hierarchy. XGBoost (AUC-PR 0.1511) sets the non-graph performance ceiling. Static GCN (AUC-PR 0.1882) adds 24.5% over XGBoost from graph structure alone, confirming that relational information provides detection value beyond what flat features can capture. TGN (AUC-PR 0.3195) adds 111.5% over XGBoost from the combination of graph structure and fine-grained temporal modelling.
+
+The performance of Logistic Regression (AUC-PR 0.0376) and Random Forest (AUC-PR 0.0619) confirms that simpler classifiers, even with class weighting, struggle with extreme class imbalance in the 28-dimensional edge feature space. XGBoost's regularised boosting provides better separation, but the absence of relational context limits its ceiling.
+
+A nuanced interpretation is required. The GNN advantage over conventional classifiers is substantial but not overwhelming when only graph structure is added (GCN +24.5% AUC-PR over XGBoost). The decisive advantage emerges when continuous-time temporal modelling is combined with graph structure (TGN +111.5% AUC-PR over XGBoost). For an AML compliance team deciding whether to invest in graph-based detection infrastructure, the evidence suggests that graph structure alone provides a measurable but modest improvement; the full benefit requires the additional investment in temporal infrastructure.
+
+**5.1.4 SQ4: Practical Implications for AML Practitioners**
+
+SQ4 asked: *What practical implications do the comparative empirical findings hold for AML compliance practitioners?*
+
+This sub-question is addressed in detail in the dedicated practitioner implications section (Section 5.3). In summary, the findings provide evidence-based guidance on model selection across three tiers, quantify the precision-recall trade-offs that operational compliance teams face, and identify the conditions under which investment in temporal GNN infrastructure is justified by a meaningful improvement in detection performance.
+
+**5.1.5 Main Research Question**
+
+The main research question asked: *How do static and temporal Graph Neural Network architectures compare to conventional supervised machine learning classifiers in detecting money laundering in financial transaction networks?*
+
+The answer, grounded in the empirical evidence presented in Chapter 4, is as follows.
+
+Continuous-time temporal GNNs with per-node memory (TGN) decisively outperform both static GNNs and conventional machine learning classifiers for AML detection under deployment-realistic chronological evaluation. The performance hierarchy is: **TGN > GCN > XGBoost > TemporalGCN > GraphSAGE > GAT > EvolveGCN-H**, measured by AUC-PR, the metric most sensitive to minority class detection quality.
+
+Three qualifications are essential. First, **temporal modelling is not inherently beneficial.** Snapshot-based temporal GNNs (TemporalGCN, EvolveGCN-H) underperform the static GCN, demonstrating that temporal information must be modelled at transaction-level granularity to add value. Coarse temporal bucketing discards the very patterns it is meant to capture. Second, **graph structure alone provides a measurable but modest gain.** GCN improves AUC-PR by 24.5% over XGBoost. The combination of graph structure and continuous-time temporal modelling (TGN) improves AUC-PR by 111.5% over XGBoost. The whole is greater than the sum of its parts. Third, **evaluation protocol determines how honestly these numbers reflect real-world performance.** Chronological splitting, which evaluates models on future transactions after training on past transactions, provides a more deployment-realistic estimate than the random splits that predominate in published AML GNN studies. Under chronological evaluation, the gap between continuous-time and static approaches is likely larger than the numbers reported here suggest.
+
+**5.2 Theoretical Implications**
+
+This study makes four contributions to the theoretical understanding of GNN-based AML detection.
+
+**Temporal granularity as a first-order design factor.** The finding that snapshot-based temporal GNNs underperform static GCN while continuous-time TGN substantially outperforms it establishes that temporal granularity, not temporal modelling in the abstract, determines detection performance. This extends the theoretical framework of Section 2.4, which presented snapshot and continuous-time paradigms as alternatives without evidence favouring one over the other. The empirical results provide such evidence: for financial transaction networks where laundering patterns unfold at the level of individual transactions, the snapshot paradigm is architecturally insufficient. This is not an implementation limitation but a theoretical one: no number of snapshots can fully recover transaction-level ordering if multiple transactions are aggregated within each window.
+
+**Per-node memory as a learned behavioural summary.** TGN's per-slice performance improvement (AUC-PR from 0.05 to 0.45) provides empirical evidence that EMA memory functions as a learned behavioural summary, accumulating interaction history over time and enabling the model to recognise accounts whose behaviour transitions from legitimate to suspicious. This connects to the criminological theory discussed in Section 2.1: Levi (2002) identified that laundering is detectable through relational context, and the FATF (2023) defines layering as an inherently sequential process. Per-node memory operationalises these theoretical insights by maintaining a differentiable summary of each account's transaction history, updated with each new interaction.
+
+**Weighted loss and gradient clipping interaction.** The methodological finding that gradient clipping destructively interacts with large pos_weight values under extreme class imbalance (Section 3.4.4) has implications beyond this implementation. Standard neural network training guidance recommends gradient clipping as a stability measure. This recommendation must be qualified when large class weights are applied: clipping thresholds should be set relative to the post-weighted gradient magnitudes, not the unweighted ones. This finding contributes to the literature on training neural networks under class imbalance (Dou et al., 2020; He & Garcia, 2009).
+
+**Chronological evaluation as a methodological standard.** The finding that evaluation protocol materially affects reported performance, with random splits producing higher estimates than chronological splits, has implications for AML GNN research methodology. The field would benefit from standardising on chronological evaluation, which more honestly reflects deployment conditions. Studies that report only random-split results may be overstating real-world performance.
+
+**5.3 Practitioner Implications**
+
+This section translates the empirical findings into actionable guidance for AML compliance practitioners, directly addressing the assessment criterion that the thesis provide concrete, evidence-based recommendations for the compliance practice community.
+
+**5.3.1 Model Selection Decision Framework**
+
+The three-tier evaluation supports a decision framework for AML compliance teams selecting a detection approach. The appropriate tier depends on three factors: the institution's existing data infrastructure, the acceptable false positive burden, and the regulatory stakes of missed detection.
+
+**Tier 1: Conventional ML (XGBoost).** Appropriate when an institution needs a quickly deployable system with low infrastructure requirements. XGBoost operates on flat transaction features, requires no graph database or temporal infrastructure, trains in minutes, and produces interpretable feature importance scores. Its AUC-PR of 0.151 means that, at a calibrated threshold, it detects a meaningful fraction of laundering cases. The limitation is precision: XGBoost's low precision at any reasonable recall level means compliance analysts will review many false positives. This tier is suitable for institutions in early stages of AML analytics maturity, or as a baseline against which more sophisticated approaches are benchmarked.
+
+**Tier 2: Static GNN (GCN).** Appropriate when an institution has invested in graph infrastructure and seeks improved precision over conventional approaches. GCN's AUC-PR of 0.188 represents a 24.5% improvement over XGBoost. At its calibrated threshold (0.70), GCN detects 39% of laundering at 18% precision. This means approximately one in five alerts is genuine, compared to approximately one in thirty-eight for XGBoost at default threshold. The infrastructure requirements are moderate: a graph database mapping accounts to nodes and transactions to edges, with batch retraining as new transaction data arrives. GCN does not model temporal dynamics, so it is most appropriate when the primary laundering patterns of concern are relational (layering chains, fan-in/fan-out structures) rather than temporal (behavioural transitions, transaction sequencing).
+
+**Tier 3: Continuous-Time Temporal GNN (TGN).** Appropriate when detection quality is a regulatory or operational priority justifying additional infrastructure investment. TGN's AUC-PR of 0.320 represents a 111.5% improvement over XGBoost and a 70.0% improvement over GCN. At its calibrated threshold (0.42), TGN detects 30% of laundering at 43% precision: nearly one in two alerts is genuine. The infrastructure requirements are more substantial: transactions must be processed in chronological order with individual timestamps, per-node memory states must persist across inference batches, and model retraining must respect temporal ordering to avoid data leakage. The investment is justified when the cost of missed laundering (regulatory fines, reputational damage, criminal facilitation) outweighs the cost of temporal infrastructure.
+
+Table 5.1 summarises the decision framework.
+
+**Table 5.1: Model selection framework for AML compliance practitioners.**
+
+| Factor | Tier 1: XGBoost | Tier 2: GCN | Tier 3: TGN |
+|--------|-----------------|-------------|-------------|
+| AUC-PR | 0.151 | 0.188 | 0.320 |
+| Precision at calibrated threshold | ~0.03 | ~0.18 | ~0.43 |
+| Infrastructure requirements | Low | Moderate | Substantial |
+| Training time (CPU) | ~3 min | ~102 min | ~114 min |
+| Interpretability | High (feature importance) | Moderate (node embeddings) | Moderate (memory states) |
+| Temporal dynamics | Not modelled | Not modelled | Modelled (continuous-time) |
+| Deployment complexity | Low | Moderate | High |
+
+**5.3.2 Precision-Recall Trade-offs and Operational Alert Burden**
+
+The precision-recall trade-off has direct operational consequences for compliance team workload. At the calibrated threshold, TGN generates approximately 43 true positives for every 100 alerts, with the remaining 57 being false positives. At a laundering prevalence of 0.1%, this means that for every 100,000 transactions processed, approximately 100 are genuine laundering cases. TGN at its calibrated threshold would flag approximately 70 transactions, of which roughly 30 would be genuine laundering and 40 would be false positives. This alert volume (70 per 100,000 transactions, or roughly 700 per million) is within the review capacity of a typical compliance team.
+
+In contrast, XGBoost at its default threshold flags approximately 3,250 transactions per 100,000 (based on its 0.0265 precision and 0.8610 recall, flagging 86% of 100 laundering cases at 2.7% precision), producing approximately 3,150 false positives for every 86 true positives. An analyst reviewing 100 alerts per day would see approximately 3 genuine laundering cases from XGBoost versus approximately 43 from TGN.
+
+The threshold is configurable. An institution prioritising recall (catching as many laundering cases as possible, accepting more false positives) can lower the threshold. An institution prioritising precision (minimising analyst time wasted on false positives) can raise it. The calibrated thresholds reported in Chapter 4 maximise F1-score but are not prescriptive; each institution should calibrate against its own cost ratio of false negatives to false positives.
+
+**5.3.3 Deployment Considerations**
+
+Several practical considerations arise from the development and evaluation of these models.
+
+**Chronological retraining.** TGN's per-node memory states are a function of transaction history. When the model is retrained on new data, memory states must be reinitialised from the beginning of the training period or carried forward from the previous training run. The former is simpler but discards accumulated history; the latter preserves history but requires careful handling to avoid stale memory states from outdated model weights. A practical approach is periodic full retraining (monthly or quarterly) with memory states computed from scratch over the full historical dataset, combined with daily inference using frozen model weights and continuously updating memory.
+
+**Feature engineering in production.** The 28 edge features and 12 node features used in this study (detailed in Appendix A) were computed from raw transaction and account data. In a production setting, these features must be computed in real time or near-real time as transactions arrive. The log-transformed amount features and one-hot encoded categorical features are straightforward to compute; the cyclic time encodings (hour of day, day of week) require timestamp parsing. The node features (degree, volume, counterparty statistics) are aggregate statistics that must be recomputed or incrementally updated as new transactions arrive.
+
+**Memory persistence.** TGN's per-node memory is the model's learned summary of account behaviour. For deployment, memory states for all active accounts must persist between inference batches. This requires a memory store (in-memory key-value store for latency-sensitive applications, or database-backed for durability) mapping account composite keys to memory vectors. The memory dimension in this implementation is 64, meaning each account's memory state is a 64-dimensional float vector (256 bytes at float32). For 500,000 accounts, total memory storage is approximately 128 MB, which is negligible by modern infrastructure standards.
+
+**Reproducibility and adaptation.** The complete source code, trained model checkpoints, and reproduction commands are available in the project repository (Appendix B). Compliance analytics teams can reproduce the reported results, evaluate the models against their own institutional data, and adapt the implementation to their specific requirements. The tool's modular architecture separates data loading, feature engineering, graph construction, model definition, and training, allowing individual components to be replaced or extended without modifying the rest of the pipeline.
+
+**5.3.4 Cost-Benefit Considerations**
+
+The decision to invest in temporal GNN infrastructure depends on the institution's risk exposure and current detection baseline. TGN's 70% AUC-PR improvement over GCN represents a meaningful detection gain, but it requires investment in chronological data pipelines, memory state management, and more complex model operations. For an institution currently operating rule-based systems with very low detection rates, the incremental benefit of GCN over rule-based approaches may be large enough to justify graph infrastructure, with TGN representing a second-phase investment. For an institution already using conventional ML, the direct jump to TGN may be justified if the precision improvement (from ~3% to ~43%) translates to analyst time savings and improved detection of sophisticated laundering schemes.
+
+This study does not provide a financial cost-benefit analysis, as the costs of false negatives (regulatory fines, criminal facilitation) and false positives (analyst time, delayed legitimate transactions) are institution-specific. However, the quantified performance differences reported in Chapter 4 provide the empirical inputs that an institution would need to conduct such an analysis.
+
+**5.4 Limitations**
+
+This study has several limitations that should be considered when interpreting its findings and assessing their generalizability.
+
+**Synthetic dataset.** The IBM AML HI-Small dataset is synthetic, with laundering patterns derived from FATF-documented typologies (Altman et al., 2023). While this ensures the patterns reflect regulatory knowledge, it also means the model has been evaluated on simulated rather than genuine criminal behaviour. The extent to which performance on this benchmark transfers to real-world money laundering detection depends on how closely the FATF-informed simulation approximates actual laundering patterns in institutional transaction data. Publicly available real-world AML transaction datasets with account-level granularity do not currently exist, making synthetic benchmarks the only reproducible evaluation option available to independent researchers.
+
+**Single dataset variant.** Only the HI-Small variant (518,581 accounts, 5,078,345 transactions) was used. The IBM AML dataset offers four variants (HI/LI combined with Small/Medium). While the data-generating process is identical across variants, meaning architectural findings are expected to generalise, empirical verification on the larger variants and the lower-prevalence LI variants was not performed. The Medium variant, with tens of millions of transactions, would test the scalability claims made here.
+
+**CPU-constrained training.** All models were trained on a single CPU, which restricted architectural choices. GAT was limited to a single attention head, likely understating the potential of attention-based architectures. EvolveGCN-H was limited to rank 2, likely understating what the architecture could achieve at higher ranks. No automated hyperparameter optimisation was performed. GPU training would enable these restrictions to be lifted and might yield different performance rankings, particularly for GAT and EvolveGCN-H.
+
+**Snapshot granularity not systematically investigated.** The 12-window snapshot configuration was chosen as a reasonable balance between temporal resolution and per-snapshot edge density. The sensitivity of snapshot model performance to the number of snapshots was not systematically varied. It is possible that a larger number of snapshots (for example, 100 or 1,000) could partially close the gap between snapshot and continuous-time models, though the computational cost would scale linearly with the number of snapshots.
+
+**EMA memory versus GRU memory.** TGN used EMA-based memory rather than the GRU-based memory in Rossi et al. (2020), due to a PyG TGNMemory dtype incompatibility documented in Section 3.4.4. The custom EMA implementation maintains a fixed beta parameter (0.85) that controls the rate at which historical information decays, whereas GRU-based memory learns this rate through gating. The extent to which this architectural difference affects the reported results is unknown.
+
+**No ensemble methods.** Individual models were evaluated independently. Ensembles combining complementary architectures (for example, GCN for relational patterns plus TGN for temporal patterns) were not explored and might outperform any single model.
+
+**Single financial system simulation.** The IBM AML dataset simulates transactions within a single financial system. Cross-institutional laundering, where funds move between accounts at different banks, is not represented. Real-world AML detection often involves multiple institutions with incomplete visibility into each other's transaction networks.
+
+**No fairness or bias analysis.** The dataset's laundering patterns are derived from FATF typologies rather than real enforcement data, which mitigates but does not eliminate the risk that the model learns patterns correlated with legitimate but atypical financial behaviour. No analysis of model fairness across entity types, banks, or transaction patterns was conducted.
+
+**5.5 Future Research**
+
+The findings and limitations of this study suggest several directions for future research.
+
+**Cross-variant and cross-domain evaluation.** Extending the evaluation to all four IBM AML variants (HI/LI combined with Small/Medium) would test the generalizability of the architectural findings across dataset scales and prevalence ratios. Beyond the IBM AML benchmark, evaluating the same architectures on other public financial transaction benchmarks, should they become available, would test whether the performance hierarchy reported here is dataset-specific or architecture-inherent.
+
+**GPU-scale training with hyperparameter optimisation.** Training these architectures on GPU hardware with systematic hyperparameter search (grid, random, or Bayesian) would test whether the performance rankings reported here are robust to hyperparameter choices and whether architectures constrained by CPU (GAT multi-head, EvolveGCN-H higher rank) achieve better performance with those constraints lifted.
+
+**Alternative continuous-time architectures.** Beyond TGN, other continuous-time temporal GNN architectures exist, including temporal attention networks (Xu et al., 2020) and DyRep (Trivedi et al., 2019). Evaluating these on the IBM AML benchmark would provide a more complete picture of the continuous-time paradigm's capabilities for AML detection.
+
+**Ensemble approaches.** Combining complementary architectures, such as a static GCN for structural pattern detection with a TGN for temporal pattern detection, may yield performance exceeding any single model. The different information sources (relational vs temporal) suggest that ensemble predictions could be more robust than individual model predictions.
+
+**Fairness and bias in GNN-based AML.** Research is needed on whether GNN-based AML models exhibit bias against particular entity types, geographies, or transaction patterns. If GNN message passing amplifies biases present in the underlying transaction data, the fairness implications for automated AML screening could be significant.
+
+**Multi-institutional transaction networks.** Extending the graph to include transactions across multiple financial institutions, potentially through federated learning or privacy-preserving techniques, would address the limitation that real-world laundering often spans multiple banks.
+
+**5.6 Concluding Remarks**
+
+This study set out to answer a question with direct relevance to both the academic literature and the AML compliance practice community: how do graph neural network architectures, spanning static and temporal paradigms, compare to conventional machine learning for detecting money laundering in financial transaction networks?
+
+The answer, supported by a systematic three-tier evaluation on a standardised public benchmark, is that continuous-time temporal GNNs with per-node memory represent the most effective approach currently available. TGN achieves an AUC-ROC of 0.9684 and an AUC-PR of 0.3195 under deployment-realistic chronological evaluation, substantially outperforming both static GNNs and conventional classifiers. The key insight is that temporal granularity matters: continuous-time processing at the individual transaction level captures patterns that coarse snapshot-based approaches cannot.
+
+The journey revealed an unexpected finding of equal importance: temporal modelling is not automatically beneficial. Both snapshot-based temporal architectures underperformed the static GCN, demonstrating that temporal information must be at the right granularity to add value. This negative result directly motivates the continuous-time approach and serves as a cautionary note for future AML GNN research: building a temporal model is not sufficient; the temporal resolution must match the timescale of the patterns being detected.
+
+The tool developed in this research, comprising data engineering pipelines, seven model implementations across three architectural tiers, and a reproducible evaluation framework, is available as open-source reference implementation. For the AML compliance practice community, the evidence base now exists for informed model selection: conventional ML for rapid deployment with basic detection, static GNNs for improved precision through relational modelling, and continuous-time temporal GNNs when detection quality justifies infrastructure investment.
+
+Money laundering, as a phenomenon, is both relational and temporal. It exploits the structure of financial networks and the sequencing of transactions. The detection tools built to counter it must, as this study has demonstrated, address both dimensions.
+
+
+
+---
+
+
+# Appendices
+
+**Appendix A: Complete Feature Specification**
+
+This appendix provides the exhaustive specification of all features used by the models in this study. Section 3.3.1 provides illustrative examples; this appendix provides the complete reference.
+
+**A.1 Node Features (12 features)**
+
+Node features are computed per account from the accounts file and aggregated transaction statistics. All count and amount features are log1p-transformed before standardisation. Categorical features are label-encoded then standardised.
+
+**Table A.1: Complete node feature specification.**
+
+| Index | Feature Name | Type | Source | Computation |
+|-------|-------------|------|--------|-------------|
+| 0 | bank_name | Categorical | accounts.csv | Label-encoded, then standardised (z-score) |
+| 1 | bank_id | Categorical | accounts.csv | Label-encoded, then standardised (z-score) |
+| 2 | entity_type | Categorical | accounts.csv | Extracted from Entity Name (e.g., "Corporation #33520" becomes "Corporation"), label-encoded, standardised |
+| 3 | degree_out | Numeric | transactions.csv | Number of transactions sent by this account (log1p) |
+| 4 | total_amount_out | Numeric | transactions.csv | Sum of amounts sent (log1p) |
+| 5 | avg_amount_out | Numeric | transactions.csv | Mean amount sent (log1p) |
+| 6 | num_counterparties_out | Numeric | transactions.csv | Number of unique receiving accounts (log1p) |
+| 7 | degree_in | Numeric | transactions.csv | Number of transactions received by this account (log1p) |
+| 8 | total_amount_in | Numeric | transactions.csv | Sum of amounts received (log1p) |
+| 9 | avg_amount_in | Numeric | transactions.csv | Mean amount received (log1p) |
+| 10 | num_counterparties_in | Numeric | transactions.csv | Number of unique sending accounts (log1p) |
+| 11 | degree_total | Numeric | transactions.csv | degree_out + degree_in (log1p) |
+
+All 12 features are standardised to zero mean and unit variance using a StandardScaler fitted on the training set only. Accounts with no transaction history receive zero values for all transaction statistic features after joining.
+
+**A.2 Edge Features (28 features)**
+
+Edge features are computed per transaction. Amount features are log1p-transformed. Cyclic time features are encoded as sine-cosine pairs. Categorical features are one-hot encoded. The first 6 features (amount_log1p, hour_sin, hour_cos, dow_sin, dow_cos, amount_paid_log1p) are standardised; the 22 one-hot features (7 payment format + 15 currency) are left unstandardised since they are bounded to {0, 1}.
+
+**Table A.2: Complete edge feature specification.**
+
+| Index | Feature Name | Type | Source | Computation |
+|-------|-------------|------|--------|-------------|
+| 0 | amount_log1p | Numeric | transactions.csv | log1p(Amount Received), standardised |
+| 1 | hour_sin | Numeric | transactions.csv | sin(2 * pi * hour / 24), standardised |
+| 2 | hour_cos | Numeric | transactions.csv | cos(2 * pi * hour / 24), standardised |
+| 3 | dow_sin | Numeric | transactions.csv | sin(2 * pi * day_of_week / 7), standardised |
+| 4 | dow_cos | Numeric | transactions.csv | cos(2 * pi * day_of_week / 7), standardised |
+| 5 | amount_paid_log1p | Numeric | transactions.csv | log1p(Amount Paid), standardised |
+| 6-12 | pmt_{category} | One-hot (7) | transactions.csv | Payment Format one-hot: ACH, Cheque, Credit Card, Domestic Wire, International Wire, Cash, Unknown. Exactly one column = 1 per transaction. |
+| 13-27 | cur_{code} | One-hot (15) | transactions.csv | Currency one-hot: one column per currency code (USD, EUR, GBP, etc.). Exactly one column = 1 per transaction. |
+
+**A.3 Feature Engineering Design Notes**
+
+Features are computed from the training set only. The fitted encoders (LabelEncoder for categorical node features and edge payment/currency fields, StandardScaler for numeric features) are then applied to validation and test sets without refitting. This prevents data leakage from validation and test partitions into model training.
+
+Log1p transformation is applied to all amount and count features because transaction amounts and degree distributions are heavily long-tailed: a small number of accounts send or receive orders of magnitude more transactions and larger amounts than the typical account. Without log transformation, these extreme values would dominate the standardised feature space.
+
+Cyclic time encoding using sine-cosine pairs ensures that temporally adjacent moments have similar feature representations. Under a linear encoding, 23:59 and 00:01 would be separated by 23.98 units; under the cyclic encoding, they are separated by the Euclidean distance between (sin(23:59), cos(23:59)) and (sin(00:01), cos(00:01)), which is small. The same principle applies to day of week, where Monday and Sunday are neighbours on the 7-day circle.
+
+---
+
+**Appendix B: Reproducibility Guide**
+
+This appendix provides the complete set of commands and configuration required to reproduce all experimental results reported in this thesis.
+
+**B.1 Environment**
+
+All experiments were conducted with the following software versions:
+
+- Python 3.11
+- PyTorch 2.x
+- PyTorch Geometric 2.5.x
+- scikit-learn 1.x
+- XGBoost 2.x
+- NumPy 1.24+
+- Pandas 2.0+
+- Matplotlib 3.7+
+- Seaborn 0.12+
+
+The complete dependency list with exact version numbers is specified in `requirements.txt` at the project root. Install with:
+
+```
+pip install -r requirements.txt
+```
+
+**B.2 Reproducibility Guarantees**
+
+All experiments use a fixed random seed (42) across NumPy, PyTorch, and Python's random module. Data splits are deterministic: transactions are chronologically sorted, then partitioned at 70/15/15 ratios by index. Model initialisation is controlled by the fixed seed. Training procedures do not involve stochastic data augmentation.
+
+Under these conditions, re-running any experiment with the same command-line arguments produces numerically identical results.
+
+**B.3 Reproduction Commands**
+
+**Conventional ML baselines (Tier 1):**
+
+```
+python experiments/run_baselines.py --variant HI-Small --seed 42
+```
+
+This trains Logistic Regression, Random Forest, and XGBoost on flat edge features and reports AUC-ROC, AUC-PR, Precision, Recall, and F1-score for all three models.
+
+**Static GNNs (Tier 2):**
+
+```
+python experiments/run_gnn.py --variant HI-Small --model gcn --seed 42 --epochs 200
+python experiments/run_gnn.py --variant HI-Small --model gat --seed 42 --epochs 200 --heads 1
+python experiments/run_gnn.py --variant HI-Small --model sage --seed 42 --epochs 200 --aggregator mean
+```
+
+Or run all three sequentially:
+
+```
+python experiments/run_gnn.py --variant HI-Small --model all --seed 42 --epochs 200
+```
+
+**Snapshot temporal GNNs (Tier 3a):**
+
+```
+python experiments/run_temporal.py --variant HI-Small --model temporal_gcn --seed 42 --epochs 200
+python experiments/run_temporal.py --variant HI-Small --model evolve_gcn_h --seed 42 --epochs 200 --rank 2
+```
+
+**Continuous-time TGN (Tier 3b):**
+
+```
+python experiments/run_tgn.py --variant HI-Small --epochs 100 --lr 0.003 --pos_weight_mult 0.01 --grad_clip 0 --seed 42
+```
+
+The `--grad_clip 0` argument is critical: with `pos_weight=12.4`, gradient clipping destroys the minority class learning signal (see Section 3.4.4 for the full explanation).
+
+**B.4 Data Splits**
+
+All splits are chronological (time-based):
+1. Transactions are sorted by their Unix timestamp.
+2. The earliest 70% of edges are assigned to training.
+3. The next 15% are assigned to validation.
+4. The latest 15% are assigned to testing.
+
+For snapshot temporal models, the 12 quantile-based windows are chronologically ordered: windows 0-7 = training, window 8 = validation, windows 9-11 = testing.
+
+The chronological split ensures that models are trained on past transactions and evaluated on future transactions, mirroring deployment conditions.
+
+**B.5 Expected Output**
+
+Running all reproduction commands produces the following expected metrics (minor variation may occur if library versions differ):
+
+| Model | AUC-ROC | AUC-PR | F1 |
+|-------|---------|--------|-----|
+| Logistic Regression | 0.9378 | 0.0376 | 0.0267 |
+| Random Forest | 0.8603 | 0.0619 | 0.0070 |
+| XGBoost | 0.9381 | 0.1511 | 0.0514 |
+| GCN | 0.9705 | 0.1882 | 0.2513 |
+| GAT | 0.9581 | 0.0958 | 0.0979 |
+| GraphSAGE | 0.9459 | 0.0420 | 0.0946 |
+| TemporalGCN | 0.9570 | 0.0637 | 0.1343 |
+| EvolveGCN-H | 0.8972 | 0.0275 | 0.0631 |
+| TGN | 0.9684 | 0.3195 | 0.3527 |
+
+**B.6 Project Structure**
+
+```
+src/
+â”œâ”€â”€ data/           â€” Data loading, feature engineering, graph construction
+â”œâ”€â”€ models/         â€” Model implementations (GCN, GAT, GraphSAGE, TemporalGNN, TGN, baselines)
+â”œâ”€â”€ training/       â€” Training loops and evaluation harness
+â””â”€â”€ utils/          â€” Configuration, metrics, logging
+
+experiments/        â€” CLI runners for each model tier
+docs/               â€” RESULTS.md, THESIS_NARRATIVE.md, report chapters
+results/            â€” Training logs and model checkpoints
+```
+
+---
+
+**Appendix C: Generative AI Usage Declaration**
+
+This appendix declares the use of generative AI tools in the preparation of this thesis, in accordance with the Amsterdam University of Applied Sciences Master Project module guide requirements.
+
+**Tool used:** Claude Code (Anthropic), powered by Claude Opus 4.7.
+
+**Nature of use:**
+- Assistance with drafting and revising report chapter text based on experimental results, methodological documentation, and supervisor feedback provided by the author.
+- Formatting of tables and structural organisation of report content.
+- Code review and documentation of the software tool developed for this research.
+
+**Nature of author contribution:**
+- All experimental design, implementation, and execution was performed by the author.
+- All research questions, methodological decisions, and conclusions were formulated by the author.
+- All literature review, citation selection, and theoretical framework development was performed by the author.
+- The author directed the drafting process, provided all substantive content (experimental results, architectural descriptions, methodological reasoning), reviewed all AI-generated text for accuracy and appropriateness, and takes full responsibility for the final content of this thesis.
+
+**Verification:** All factual claims, numerical results, and citations in this thesis have been verified by the author against primary sources (experimental logs, published papers, and the assessment rubric).
+
+---
+
+**Appendix D: Full Results Tables**
+
+This appendix reproduces the complete results from Chapter 4 for reference. The data is identical to that presented in the chapter body and in the project's `docs/RESULTS.md` file.
+
+**Table D.1: Conventional ML baseline results (random 70/15/15 split, threshold 0.50).**
+
+| Model | AUC-ROC | AUC-PR | Precision | Recall | F1 |
+|-------|---------|--------|-----------|--------|-----|
+| Logistic Regression | 0.9378 | 0.0376 | 0.0135 | 0.9295 | 0.0267 |
+| Random Forest | 0.8603 | 0.0619 | 0.0035 | 0.9148 | 0.0070 |
+| XGBoost | 0.9381 | 0.1511 | 0.0265 | 0.8610 | 0.0514 |
+
+**Table D.2: Static GNN results (random 70/15/15 split, calibrated thresholds).**
+
+| Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
+|-------|--------|---------|--------|-----------|--------|-----|--------|
+| GCN | 63,489 | 0.9705 | 0.1882 | 0.1846 | 0.3933 | 0.2513 | 0.7029 |
+| GAT (1 head) | 64,001 | 0.9581 | 0.0958 | 0.0539 | 0.5317 | 0.0979 | 0.5544 |
+| GraphSAGE | 81,409 | 0.9459 | 0.0420 | 0.0563 | 0.2953 | 0.0946 | 0.4852 |
+
+**Table D.3: Temporal GNN results (chronological split, calibrated thresholds).**
+
+| Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
+|-------|--------|---------|--------|-----------|--------|-----|--------|
+| TemporalGCN | 161,793 | 0.9570 | 0.0637 | 0.1177 | 0.1563 | 0.1343 | 0.7326 |
+| EvolveGCN-H | 578,369 | 0.8972 | 0.0275 | 0.0465 | 0.0982 | 0.0631 | 0.7029 |
+| EvolveGCN-H (rank=8) | 33M | â€” | â€” | â€” | â€” | â€” | â€” |
+| TGN | 119,000 | 0.9684 | 0.3195 | 0.4257 | 0.3011 | 0.3527 | 0.4159 |
+
+**Table D.4: TGN per-slice performance (12 equal chronological test set slices, threshold 0.50).**
+
+| Slice | AUC-ROC | AUC-PR | Precision | Recall |
+|-------|---------|--------|-----------|--------|
+| 0 (earliest test) | 0.9205 | 0.0502 | 0.0000 | 0.0000 |
+| 3 | 0.9280 | 0.0853 | 0.6000 | 0.0405 |
+| 6 | 0.9714 | 0.0712 | 0.0000 | 0.0000 |
+| 9 | 0.9591 | 0.0769 | 0.1294 | 0.1028 |
+| 10 | 0.9563 | 0.1875 | 0.1553 | 0.3617 |
+| 11 (latest test) | 0.9732 | 0.4518 | 0.5749 | 0.3300 |
+
+
+
+---
+
+

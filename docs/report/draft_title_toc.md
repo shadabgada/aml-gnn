@@ -2,7 +2,7 @@
 
 ## Master Thesis
 
-**Draft: Chapters 1-3**
+**Draft**
 
 ---
 
@@ -16,7 +16,7 @@
 
 **Institution:** Amsterdam University of Applied Sciences
 
-**Date:** May 2026
+**Date:** June 2026
 
 ---
 
@@ -50,5 +50,29 @@
 - 3.4 Model Architectures (SQ2 and SQ3)
 - 3.5 Training and Evaluation Protocol (SQ2 and SQ3)
 - 3.6 Ethical Considerations and Reproducibility
+
+**Chapter 4: Results, Analyses and Tool Performance**
+
+- 4.1 Baseline Results: Conventional Machine Learning (Tier 1)
+- 4.2 Static GNN Results: Graph Structure Without Time (Tier 2)
+- 4.3 Temporal GNN Results: Graph Structure With Time (Tier 3)
+- 4.4 Cross-Model Comparison
+- 4.5 Tool Performance Summary
+
+**Chapter 5: Discussion, Recommendations and Conclusions**
+
+- 5.1 Answering the Research Questions
+- 5.2 Theoretical Implications
+- 5.3 Practitioner Implications
+- 5.4 Limitations
+- 5.5 Future Research
+- 5.6 Concluding Remarks
+
+**Appendices**
+
+- Appendix A: Complete Feature Specification
+- Appendix B: Reproducibility Guide
+- Appendix C: Generative AI Usage Declaration
+- Appendix D: Full Results Tables
 
 ---

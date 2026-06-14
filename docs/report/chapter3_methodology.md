@@ -154,7 +154,7 @@ Hyperparameters were set based on architectural defaults from the original paper
 | Parameter | Static GNNs | TemporalGCN | EvolveGCN-H | TGN |
 |-----------|-------------|-------------|-------------|-----|
 | Hidden dim | 128 | 128 | 128 | 128 |
-| Num layers | 2 | 2 | 2 | |
+| Num layers | 2 | 2 | 2 | N/A |
 | Dropout | 0.3 | 0.3 | 0.3 | 0.3 |
 | Learning rate | 0.001 | 0.001 | 0.001 | 0.003 |
 | Weight decay | 0.0005 | 0.0005 | 0.0005 | 0.0005 |
@@ -163,12 +163,12 @@ Hyperparameters were set based on architectural defaults from the original paper
 | Epochs | 200 | 200 | 200 | 100 |
 | Patience | 25 | 25 | 25 | 25 |
 | Batch size | Full graph | Full snapshot | Full snapshot | 2048 |
-| Memory dim | | | | 64 |
-| Time dim | | | | 8 |
-| EMA beta | | | | 0.85 |
-| Rank | | | 2 | |
-| GAT heads | 1 | | | |
-| SAGE aggregator | mean | | | |
+| Memory dim | N/A | N/A | N/A | 64 |
+| Time dim | N/A | N/A | N/A | 8 |
+| EMA beta | N/A | N/A | N/A | 0.85 |
+| Rank | N/A | N/A | 2 | N/A |
+| GAT heads | 1 | N/A | N/A | N/A |
+| SAGE aggregator | mean | N/A | N/A | N/A |
 
 For the conventional ML baselines, Logistic Regression used class_weight="balanced" and L2 regularization (C=1.0). Random Forest used 100 estimators, max_depth=10, and class_weight="balanced". XGBoost used default hyperparameters with early_stopping_rounds=20 monitored on validation log loss.
 

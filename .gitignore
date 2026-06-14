@@ -1,7 +1,15 @@
 .claude/
-
 claude-deepseek.bat
-
 claude-deepseek-skip-perms.bat
 /venv_new/
 /.idea/
+
+# Large data files (downloadable from Kaggle)
+data/raw/HI-Small_Trans.csv
+data/processed/
+
+# Model checkpoints (regenerable)
+results/checkpoints/
+
+# Training logs (regenerable)
+results/logs/

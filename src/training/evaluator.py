@@ -1,7 +1,8 @@
-"""Evaluation harness for AML edge classification.
+"""Evaluation harness for all models: LR, RF, XGBoost, GCN, GAT, GraphSAGE,
+TemporalGCN, EvolveGCN-H, TGN.
 
-Provides a consistent evaluation interface across all model types (baselines
-and GNNs), computing the full metrics suite on train/val/test splits.
+Provides a consistent evaluation interface across all model types, computing
+the full metrics suite on train/val/test splits.
 """
 
 import logging

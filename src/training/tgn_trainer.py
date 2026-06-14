@@ -1,4 +1,4 @@
-"""Training loop for TGN on AML edge classification.
+"""Training loop for continuous-time temporal GNN: TGN.
 
 Processes transaction edges chronologically. Memory updates happen inside
 the forward pass so the message projector receives gradients.

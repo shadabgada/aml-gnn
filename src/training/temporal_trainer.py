@@ -1,4 +1,4 @@
-"""Training loop for temporal GNNs on snapshot sequences.
+"""Training loop for snapshot temporal GNNs: TemporalGCN, EvolveGCN-H.
 
 Differs from the static GNNTrainer in three ways:
   1. Training iterates over a *sequence* of graph snapshots.

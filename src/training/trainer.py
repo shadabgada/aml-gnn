@@ -1,8 +1,8 @@
-"""Full-batch GNN training loop for edge classification.
+"""Training loop for static GNNs: GCN, GAT, GraphSAGE.
 
-Uses weighted BCE loss, validation AUC-ROC early stopping,
-ReduceLROnPlateau LR scheduling, gradient clipping, and
-threshold calibration for imbalanced evaluation.
+Full-batch edge classification with weighted BCE loss, validation
+AUC-ROC early stopping, ReduceLROnPlateau LR scheduling, gradient
+clipping, and threshold calibration for imbalanced evaluation.
 """
 
 from __future__ import annotations

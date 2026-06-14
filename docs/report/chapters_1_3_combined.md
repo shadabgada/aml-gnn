@@ -711,7 +711,6 @@ Table 5.1 summarises the decision framework.
 | AUC-PR | 0.151 | 0.188 | 0.320 |
 | Precision at calibrated threshold | ~0.03 | ~0.18 | ~0.43 |
 | Infrastructure requirements | Low | Moderate | Substantial |
-| Training time (CPU) | ~3 min | ~102 min | ~114 min |
 | Interpretability | High (feature importance) | Moderate (node embeddings) | Moderate (memory states) |
 | Temporal dynamics | Not modelled | Not modelled | Modelled (continuous-time) |
 | Deployment complexity | Low | Moderate | High |

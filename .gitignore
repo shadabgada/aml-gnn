@@ -3,3 +3,5 @@
 claude-deepseek.bat
 
 claude-deepseek-skip-perms.bat
+/venv_new/
+/.idea/

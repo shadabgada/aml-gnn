@@ -2,7 +2,7 @@
 
 Alarab, I., & Prakoonwit, S. (2023). Graph-based LSTM for anti-money laundering: Experimenting with temporal graph convolutional network for bitcoin data. *Neural Processing Letters*, *55*(1), 689-707. https://doi.org/10.1007/s11063-022-10904-8
 
-Altman, E., Blanchard, T., Iscen, A., Jeffries, T., Le, M., Mahmood, H., Mo, K., Monga, R., Mueller, J., & Obando, C. (2023). IBM transactions for anti-money laundering (AML). In *Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks (NeurIPS Datasets and Benchmarks 2023)*. https://datasets-benchmarks-proceedings.neurips.cc/paper/2023
+Altman, E., Blanuša, J., von Niederhäusern, L., Egressy, B., Anghel, A., & Atasu, K. (2023). Realistic synthetic financial transactions for anti-money laundering models. In *Advances in Neural Information Processing Systems 36 (NeurIPS 2023) — Datasets and Benchmarks Track*. https://proceedings.neurips.cc/paper_files/paper/2023/hash/5f38404edff6f3f642d6fa5892479c42-Abstract-Datasets_and_Benchmarks.html
 
 Breiman, L. (2001). Random forests. *Machine Learning*, *45*(1), 5-32. https://doi.org/10.1023/A:1010933404324
 
@@ -10,7 +10,7 @@ Chen, T., & Guestrin, C. (2016). XGBoost: A scalable tree boosting system. In *P
 
 Chen, Z., Van Khoa, L. D., Teoh, E. N., Nazir, A., Karuppiah, E. K., & Lam, K. S. (2018). Machine learning techniques for anti-money laundering (AML) solutions in suspicious transaction detection: A review. *Knowledge and Information Systems*, *57*(2), 245-285. https://doi.org/10.1007/s10115-017-1144-z
 
-Cheng, D., Liu, Z., Wu, Z., Sun, X., & Wang, Y. (2024). Graph neural network for anti-money laundering: A review. *Expert Systems with Applications*, *238*, 122227. https://doi.org/10.1016/j.eswa.2023.122227
+Cheng, D., Zou, Y., Xiang, S., & Jiang, C. (2024). Graph neural networks for financial fraud detection: A review. *Frontiers of Computer Science*, *19*(5), Article 19505. https://doi.org/10.1007/s11704-024-40474-y
 
 Cho, K., Van Merrienboer, B., Gulcehre, C., Bahdanau, D., Bougares, F., Schwenk, H., & Bengio, Y. (2014). Learning phrase representations using RNN encoder-decoder for statistical machine translation. In *Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing (EMNLP)* (pp. 1724-1734). ACL. https://doi.org/10.3115/v1/D14-1179
 
@@ -26,7 +26,7 @@ Hamilton, W. L., Ying, R., & Leskovec, J. (2017). Inductive representation learn
 
 He, H., & Garcia, E. A. (2009). Learning from imbalanced data. *IEEE Transactions on Knowledge and Data Engineering*, *21*(9), 1263-1284. https://doi.org/10.1109/TKDE.2008.239
 
-Johannessen, S., & Jullum, M. (2025). Temporal graph learning for financial crime detection. *Pattern Recognition*, *158*, 111028. https://doi.org/10.1016/j.patcog.2024.111028
+Johannessen, F., & Jullum, M. (2025). Finding money launderers using heterogeneous graph neural networks. *Journal of Finance and Data Science*, *11*, Article 100175. https://doi.org/10.1016/j.jfds.2025.100175
 
 Kipf, T. N., & Welling, M. (2017). Semi-supervised classification with graph convolutional networks. In *International Conference on Learning Representations (ICLR 2017)*. https://arxiv.org/abs/1609.02907
 

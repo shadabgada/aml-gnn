@@ -804,7 +804,11 @@ Hamilton, W. L., Ying, R., & Leskovec, J. (2017). Inductive representation learn
 
 He, H., & Garcia, E. A. (2009). Learning from imbalanced data. *IEEE Transactions on Knowledge and Data Engineering*, *21*(9), 1263-1284. https://doi.org/10.1109/TKDE.2008.239
 
+Jensen, R. I., & Iosifidis, A. (2023). Qualifying and raising anti-money laundering alarms with deep learning. *Expert Systems with Applications*, *214*, 119037. https://doi.org/10.1016/j.eswa.2022.119037
+
 Johannessen, F., & Jullum, M. (2025). Finding money launderers using heterogeneous graph neural networks. *Journal of Finance and Data Science*, *11*, Article 100175. https://doi.org/10.1016/j.jfds.2025.100175
+
+Jullum, M., Løland, A., Huseby, R. B., Ånonsen, G., & Lorentzen, J. (2020). Detecting money laundering transactions with machine learning. *Journal of Money Laundering Control*, *23*(1), 173-186. https://doi.org/10.1108/JMLC-07-2019-0055
 
 Kipf, T. N., & Welling, M. (2017). Semi-supervised classification with graph convolutional networks. In *International Conference on Learning Representations (ICLR 2017)*. https://arxiv.org/abs/1609.02907
 

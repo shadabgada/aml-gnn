@@ -147,30 +147,7 @@ The use of pos_weight rather than alternative class imbalance handling technique
 
 **3.5.2 Hyperparameter Configuration**
 
-Hyperparameters were set based on architectural defaults from the original papers, with manual adjustment where needed for training stability on this dataset. No automated hyperparameter optimisation (grid search, random search, or Bayesian optimisation) was performed, which is acknowledged as a limitation. The configurations used for each model are summarised in Table 3.1.
-
-**Table 3.1: Hyperparameter configurations.**
-
-| Parameter | Static GNNs | TemporalGCN | EvolveGCN-H | TGN |
-|-----------|-------------|-------------|-------------|-----|
-| Hidden dim | 128 | 128 | 128 | 128 |
-| Num layers | 2 | 2 | 2 | N/A |
-| Dropout | 0.3 | 0.3 | 0.3 | 0.3 |
-| Learning rate | 0.001 | 0.001 | 0.001 | 0.003 |
-| Weight decay | 0.0005 | 0.0005 | 0.0005 | 0.0005 |
-| Grad clip | 1.0 | 1.0 | 1.0 | 0 |
-| Pos weight mult | 0.1 | 0.1 | 0.1 | 0.01 |
-| Epochs | 200 | 200 | 200 | 100 |
-| Patience | 25 | 25 | 25 | 25 |
-| Batch size | Full graph | Full snapshot | Full snapshot | 2048 |
-| Memory dim | N/A | N/A | N/A | 64 |
-| Time dim | N/A | N/A | N/A | 8 |
-| EMA beta | N/A | N/A | N/A | 0.85 |
-| Rank | N/A | N/A | 2 | N/A |
-| GAT heads | 1 | N/A | N/A | N/A |
-| SAGE aggregator | mean | N/A | N/A | N/A |
-
-For the conventional ML baselines, Logistic Regression used class_weight="balanced" and L2 regularisation (C=1.0). Random Forest used 100 estimators, max_depth=10, and class_weight="balanced". XGBoost used default hyperparameters with early_stopping_rounds=20 monitored on validation log loss.
+Hyperparameters were set based on architectural defaults from the original papers, with manual adjustment where needed for training stability on this dataset. No automated hyperparameter optimisation (grid search, random search, or Bayesian optimisation) was performed, which is acknowledged as a limitation. The full hyperparameter configurations for all models are provided in Appendix E.
 
 **Training duration.** All models were trained on CPU (Intel Core i7, 8 threads). Approximate training times were: Logistic Regression 2 minutes, Random Forest 10 minutes, XGBoost 3 minutes, GCN 102 minutes, GAT 154 minutes (1 head), GraphSAGE 55 minutes, TemporalGCN 65 minutes, EvolveGCN-H 50 minutes, TGN 114 minutes (100 epochs, early stopped at epoch 38). The total computational investment across all models was approximately 9 CPU-hours.
 

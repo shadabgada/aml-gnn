@@ -103,6 +103,8 @@
 - Appendix B: Reproducibility Guide
 - Appendix C: Generative AI Usage Declaration
 - Appendix D: Full Results Tables
+- Appendix E: Hyperparameter Configurations
+- Appendix F: Training and Validation Results
 
 ---
 
@@ -118,9 +120,9 @@ Financial institutions are legally obligated under frameworks such as the Europe
 
 **1.2 Current AML Detection Approaches and Their Limitations**
 
-Traditional rule-based AML systems apply fixed thresholds and heuristics to flag suspicious transactions: transactions above a certain amount, transfers to high-risk jurisdictions, or activity patterns matching predefined typologies (FATF, 2023). While these systems are interpretable and form the backbone of current compliance operations, they suffer from three fundamental limitations. First, they are rigid: rules must be explicitly defined and cannot adapt to evolving laundering tactics without manual intervention. Second, they generate extremely high false positive rates: industry reports suggest that over 95% of AML alerts are false positives, creating severe alert fatigue among compliance analysts and diverting resources from genuinely suspicious cases (Chen et al., 2018). Third, they evaluate each transaction in isolation, blind to the relational context that reveals sophisticated laundering schemes.
+Traditional rule-based AML systems apply fixed thresholds and heuristics to flag suspicious transactions: transactions above a certain amount, transfers to high-risk jurisdictions, or activity patterns matching predefined typologies (FATF, 2023). While these systems are interpretable and form the backbone of current compliance operations, they suffer from three fundamental limitations (Jensen & Iosifidis, 2023). First, they are rigid: rules must be explicitly defined and cannot adapt to evolving laundering tactics without manual intervention. Second, they generate extremely high false positive rates: industry reports suggest that over 95% of AML alerts are false positives, creating severe alert fatigue among compliance analysts and diverting resources from genuinely suspicious cases (Chen et al., 2018). Third, they evaluate each transaction in isolation, blind to the relational context that reveals sophisticated laundering schemes.
 
-Conventional machine learning approaches, including logistic regression and tree-based models such as random forests and gradient boosting, have been applied to improve upon rule-based systems (Altman et al., 2023; Chen et al., 2018). These methods analyse individual transaction features such as amount, currency, and payment format, and improve detection rates to an extent. However, they share the third limitation of rule-based systems: they fundamentally fail to capture the relational structure of money laundering. Sophisticated laundering schemes, such as layering through chains of intermediary accounts or structuring (smurfing) across multiple accounts, are only detectable when the broader network of transactions is considered (Levi, 2002). A single transaction may appear benign; its position within a network of suspicious activity reveals its true nature.
+Conventional machine learning approaches, including logistic regression and tree-based models such as random forests and gradient boosting, have been applied to improve upon rule-based systems (Altman et al., 2023; Chen et al., 2018). These methods analyse individual transaction features such as amount, currency, and payment format, and improve detection rates to an extent. However, they share the third limitation of rule-based systems: they fundamentally fail to capture the relational structure of money laundering. Sophisticated laundering schemes, such as layering through chains of intermediary accounts or structuring (smurfing) across multiple accounts, are only detectable when the broader network of transactions is considered (Johannessen & Jullum, 2025). A single transaction may appear benign; its position within a network of suspicious activity reveals its true nature (Jullum et al., 2020).
 
 **1.3 The Graph-Structured Nature of Financial Transactions**
 
@@ -136,7 +138,7 @@ Despite substantial investment in AML compliance infrastructure and a growing bo
 
 Two paradigms exist for capturing temporal dynamics in graph learning: snapshot-based architectures such as TemporalGCN and EvolveGCN-H (Pareja et al., 2020), which partition transactions into time windows and evolve representations across windows, and continuous-time architectures such as the Temporal Graph Network (TGN; Rossi et al., 2020), which processes each transaction individually with its exact timestamp. Neither paradigm has been evaluated on the IBM AML benchmark.
 
-This gap has practical consequences. Without a rigorous, like-for-like comparison spanning all three tiers (conventional machine learning, static GNNs, and temporal GNNs — encompassing both snapshot-based and continuous-time approaches), AML compliance practitioners lack the empirical evidence needed to make informed decisions about which class of model to invest in, what performance trade-offs to expect, and under what conditions temporal modelling adds sufficient value to justify its additional complexity. The research problem is therefore both academic (an unaddressed gap in the comparative evaluation literature) and practical (insufficient evidence for practitioner model selection in AML compliance contexts).
+This gap has practical consequences. Without a rigorous, like-for-like comparison spanning all three tiers (conventional machine learning, static GNNs, and temporal GNNs, encompassing both snapshot-based and continuous-time approaches), AML compliance practitioners lack the empirical evidence needed to make informed decisions about which class of model to invest in, what performance trade-offs to expect, and under what conditions temporal modelling adds sufficient value to justify its additional complexity. The research problem is therefore both academic (an unaddressed gap in the comparative evaluation literature) and practical (insufficient evidence for practitioner model selection in AML compliance contexts).
 
 **1.5 Research Objectives**
 
@@ -179,9 +181,9 @@ This research makes the following contributions:
 
 **For the AML compliance practice community:**
 
+- A comparative evaluation methodology spanning three architectural tiers that enables compliance teams to assess which class of detection model offers the best performance trade-off for their operational context.
 - Evidence-based guidance on model selection across three tiers of detection approaches, grounded in a rigorous like-for-like comparison on the same dataset.
 - A quantified analysis of the precision-recall trade-offs that operational compliance teams face when deploying graph-based detection tools, including the relationship between threshold selection and false positive burden.
-- A documented, reproducible reference implementation that compliance analytics teams can adapt and evaluate against their own institutional data and requirements.
 
 **1.8 Report Structure**
 
@@ -195,9 +197,8 @@ The remainder of this report is structured as follows.
 
 **Chapter 5 (Discussion, Recommendations and Conclusions)** answers each research sub-question and the main research question, discusses the practical implications of the findings for AML compliance practice, presents the study's theoretical contributions and novelty claims, acknowledges limitations, proposes directions for future research, and provides concluding remarks.
 
-The appendices provide the complete feature specification for all node and edge features (Appendix A), a full reproducibility guide with exact commands and dependency versions (Appendix B), the required declaration of generative AI usage (Appendix C), and the complete results tables for all models (Appendix D).
-
 ---
+
 
 # Chapter 2: Theoretical Framework
 
@@ -442,30 +443,7 @@ The use of pos_weight rather than alternative class imbalance handling technique
 
 **3.5.2 Hyperparameter Configuration**
 
-Hyperparameters were set based on architectural defaults from the original papers, with manual adjustment where needed for training stability on this dataset. No automated hyperparameter optimisation (grid search, random search, or Bayesian optimisation) was performed, which is acknowledged as a limitation. The configurations used for each model are summarised in Table 3.1.
-
-**Table 3.1: Hyperparameter configurations.**
-
-| Parameter       | Static GNNs | TemporalGCN   | EvolveGCN-H   | TGN    |
-| --------------- | ----------- | ------------- | ------------- | ------ |
-| Hidden dim      | 128         | 128           | 128           | 128    |
-| Num layers      | 2           | 2             | 2             | N/A    |
-| Dropout         | 0.3         | 0.3           | 0.3           | 0.3    |
-| Learning rate   | 0.001       | 0.001         | 0.001         | 0.003  |
-| Weight decay    | 0.0005      | 0.0005        | 0.0005        | 0.0005 |
-| Grad clip       | 1.0         | 1.0           | 1.0           | 0      |
-| Pos weight mult | 0.1         | 0.1           | 0.1           | 0.01   |
-| Epochs          | 200         | 200           | 200           | 100    |
-| Patience        | 25          | 25            | 25            | 25     |
-| Batch size      | Full graph  | Full snapshot | Full snapshot | 2048   |
-| Memory dim      | N/A         | N/A           | N/A           | 64     |
-| Time dim        | N/A         | N/A           | N/A           | 8      |
-| EMA beta        | N/A         | N/A           | N/A           | 0.85   |
-| Rank            | N/A         | N/A           | 2             | N/A    |
-| GAT heads       | 1           | N/A           | N/A           | N/A    |
-| SAGE aggregator | mean        | N/A           | N/A           | N/A    |
-
-For the conventional ML baselines, Logistic Regression used class_weight="balanced" and L2 regularisation (C=1.0). Random Forest used 100 estimators, max_depth=10, and class_weight="balanced". XGBoost used default hyperparameters with early_stopping_rounds=20 monitored on validation log loss.
+Hyperparameters were set based on architectural defaults from the original papers, with manual adjustment where needed for training stability on this dataset. No automated hyperparameter optimisation (grid search, random search, or Bayesian optimisation) was performed, which is acknowledged as a limitation. The full hyperparameter configurations for all models are provided in Appendix E.
 
 **Training duration.** All models were trained on CPU (Intel Core i7, 8 threads). Approximate training times were: Logistic Regression 2 minutes, Random Forest 10 minutes, XGBoost 3 minutes, GCN 102 minutes, GAT 154 minutes (1 head), GraphSAGE 55 minutes, TemporalGCN 65 minutes, EvolveGCN-H 50 minutes, TGN 114 minutes (100 epochs, early stopped at epoch 38). The total computational investment across all models was approximately 9 CPU-hours.
 
@@ -497,9 +475,9 @@ This chapter presents the empirical results of the three-tier comparative evalua
 
 **4.1 Baseline Results: Conventional Machine Learning (Tier 1)**
 
-Table 4.1 presents the performance of the three conventional supervised classifiers. These models operate on flat edge feature vectors without access to graph structure or temporal information, establishing the performance floor against which GNN-based models are compared.
+Table 4.1 presents the test set performance of the three conventional supervised classifiers. These models operate on flat edge feature vectors without access to graph structure or temporal information, establishing the performance floor against which GNN-based models are compared. Training and validation set results are provided in Appendix F.
 
-**Table 4.1: Conventional ML baseline results (random 70/15/15 split, threshold 0.50).**
+**Table 4.1: Conventional ML baseline results on the test set (random 70/15/15 split, threshold 0.50).**
 
 | Model               | AUC-ROC | AUC-PR | Precision | Recall | F1     |
 | ------------------- | ------- | ------ | --------- | ------ | ------ |
@@ -515,9 +493,9 @@ The key insight from the baseline tier is that even the best conventional classi
 
 **4.2 Static GNN Results: Graph Structure Without Time (Tier 2)**
 
-Table 4.2 presents the performance of the three static GNN architectures. These models incorporate graph structure through message passing but treat all transactions as simultaneously present, without temporal ordering.
+Table 4.2 presents the test set performance of the three static GNN architectures. These models incorporate graph structure through message passing but treat all transactions as simultaneously present, without temporal ordering.
 
-**Table 4.2: Static GNN results (random 70/15/15 split, calibrated thresholds).**
+**Table 4.2: Static GNN results on the test set (random 70/15/15 split, calibrated thresholds).**
 
 | Model        | Params | AUC-ROC | AUC-PR | Precision | Recall | F1     | Thresh |
 | ------------ | ------ | ------- | ------ | --------- | ------ | ------ | ------ |
@@ -539,9 +517,9 @@ This section presents results for the three temporal GNN architectures. Unlike t
 
 **4.3.1 Snapshot-Based Temporal Models**
 
-Table 4.3 presents results for the two snapshot-based temporal architectures.
+Table 4.3 presents the test set results for the two snapshot-based temporal architectures.
 
-**Table 4.3: Snapshot temporal GNN results (chronological split, calibrated thresholds).**
+**Table 4.3: Snapshot temporal GNN results on the test set (chronological split, calibrated thresholds).**
 
 | Model       | Params | AUC-ROC | AUC-PR | Precision | Recall | F1     | Thresh |
 | ----------- | ------ | ------- | ------ | --------- | ------ | ------ | ------ |
@@ -554,9 +532,9 @@ EvolveGCN-H is the weakest GNN across all three tiers (AUC-ROC 0.8972, AUC-PR 0.
 
 **4.3.2 Continuous-Time TGN**
 
-Table 4.4 presents results for the continuous-time TGN.
+Table 4.4 presents the test set results for the continuous-time TGN.
 
-**Table 4.4: TGN results (chronological split, calibrated thresholds).**
+**Table 4.4: TGN results on the test set (chronological split, calibrated thresholds).**
 
 | Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1     | Thresh |
 | ----- | ------ | ------- | ------ | --------- | ------ | ------ | ------ |
@@ -591,9 +569,9 @@ The practical interpretation is that TGN gets better the longer it runs. An acco
 
 **4.4 Cross-Model Comparison**
 
-Table 4.6 presents all nine models in a unified leaderboard, ordered by AUC-PR. The evaluation protocol column is essential for fair comparison: models evaluated on random splits are being tested on an easier task than those evaluated on chronological splits.
+Table 4.6 presents the test set performance of all nine models in a unified leaderboard, ordered by AUC-PR. The evaluation protocol column is essential for fair comparison: models evaluated on random splits are being tested on an easier task than those evaluated on chronological splits.
 
-**Table 4.6: Complete model leaderboard, ordered by AUC-PR.**
+**Table 4.6: Complete model leaderboard on the test set, ordered by AUC-PR.**
 
 | Tier     | Model       | Params | AUC-ROC | AUC-PR | F1     | Eval Split    |
 | -------- | ----------- | ------ | ------- | ------ | ------ | ------------- |
@@ -794,15 +772,7 @@ The findings and limitations of this study suggest several directions for future
 
 **5.6 Concluding Remarks**
 
-This study set out to answer a question with direct relevance to both the academic literature and the AML compliance practice community: how do graph neural network architectures, spanning static and temporal paradigms, compare to conventional machine learning for detecting money laundering in financial transaction networks?
-
-The answer, supported by a systematic three-tier evaluation on a standardised public benchmark, is that continuous-time temporal GNNs with per-node memory represent the most effective approach currently available. TGN achieves an AUC-ROC of 0.9684 and an AUC-PR of 0.3195 under deployment-realistic chronological evaluation, substantially outperforming both static GNNs and conventional classifiers. The key insight is that temporal granularity matters: continuous-time processing at the individual transaction level captures patterns that coarse snapshot-based approaches cannot.
-
-The journey revealed an unexpected finding of equal importance: temporal modelling is not automatically beneficial. Both snapshot-based temporal architectures underperformed the static GCN, demonstrating that temporal information must be at the right granularity to add value. This negative result directly motivates the continuous-time approach and serves as a cautionary note for future AML GNN research: building a temporal model is not sufficient; the temporal resolution must match the timescale of the patterns being detected.
-
-The tool developed in this research, comprising data engineering pipelines, nine model implementations across three architectural tiers, and a reproducible evaluation framework, is available as open-source reference implementation. For the AML compliance practice community, the evidence base now exists for informed model selection: conventional ML for rapid deployment with basic detection, static GNNs for improved precision through relational modelling, and continuous-time temporal GNNs when detection quality justifies infrastructure investment.
-
-Money laundering, as a phenomenon, is both relational and temporal. It exploits the structure of financial networks and the sequencing of transactions. The detection tools built to counter it must, as this study has demonstrated, address both dimensions.
+This study set out to answer how static and temporal graph neural network architectures compare to conventional machine learning for detecting money laundering in financial transaction networks. The answer, supported by a systematic three-tier evaluation on a standardised public benchmark, is that continuous-time temporal GNNs with per-node memory achieve the strongest detection performance, but temporal modelling is not automatically beneficial: snapshot-based approaches underperformed the static GCN, demonstrating that temporal information must be at the right granularity to add value. Money laundering is both relational and temporal; the detection tools built to counter it must address both dimensions.
 
 ---
 
@@ -810,7 +780,7 @@ Money laundering, as a phenomenon, is both relational and temporal. It exploits 
 
 Alarab, I., & Prakoonwit, S. (2023). Graph-based LSTM for anti-money laundering: Experimenting with temporal graph convolutional network for bitcoin data. *Neural Processing Letters*, *55*(1), 689-707. https://doi.org/10.1007/s11063-022-10904-8
 
-Altman, E., Blanuša, J., von Niederhäusern, L., Egressy, B., Anghel, A., & Atasu, K. (2023). Realistic synthetic financial transactions for anti-money laundering models. In *Advances in Neural Information Processing Systems 36 (NeurIPS 2023) — Datasets and Benchmarks Track*. https://proceedings.neurips.cc/paper_files/paper/2023/hash/5f38404edff6f3f642d6fa5892479c42-Abstract-Datasets_and_Benchmarks.html
+Altman, E., Blanuša, J., von Niederhäusern, L., Egressy, B., Anghel, A., & Atasu, K. (2023). Realistic synthetic financial transactions for anti-money laundering models. In *Advances in Neural Information Processing Systems 36 (NeurIPS 2023): Datasets and Benchmarks Track*. https://proceedings.neurips.cc/paper_files/paper/2023/hash/5f38404edff6f3f642d6fa5892479c42-Abstract-Datasets_and_Benchmarks.html
 
 Breiman, L. (2001). Random forests. *Machine Learning*, *45*(1), 5-32. https://doi.org/10.1023/A:1010933404324
 
@@ -1089,3 +1059,48 @@ This appendix reproduces the complete results from Chapter 4 for reference. The 
 | 11 (latest test)  | 0.9732  | 0.4518 | 0.5749    | 0.3300 |
 
 ---
+
+**Appendix E: Hyperparameter Configurations**
+
+This appendix presents the hyperparameter configurations used for all neural network models (Table 3.1 in the main text). All experiments used these settings unless otherwise noted in the methodology chapter.
+
+**Table E.1: Hyperparameter configurations.**
+
+| Parameter       | Static GNNs | TemporalGCN   | EvolveGCN-H   | TGN    |
+| --------------- | ----------- | ------------- | ------------- | ------ |
+| Hidden dim      | 128         | 128           | 128           | 128    |
+| Num layers      | 2           | 2             | 2             | N/A    |
+| Dropout         | 0.3         | 0.3           | 0.3           | 0.3    |
+| Learning rate   | 0.001       | 0.001         | 0.001         | 0.003  |
+| Weight decay    | 0.0005      | 0.0005        | 0.0005        | 0.0005 |
+| Grad clip       | 1.0         | 1.0           | 1.0           | 0      |
+| Pos weight mult | 0.1         | 0.1           | 0.1           | 0.01   |
+| Epochs          | 200         | 200           | 200           | 100    |
+| Patience        | 25          | 25            | 25            | 25     |
+| Batch size      | Full graph  | Full snapshot | Full snapshot | 2048   |
+| Memory dim      | N/A         | N/A           | N/A           | 64     |
+| Time dim        | N/A         | N/A           | N/A           | 8      |
+| EMA beta        | N/A         | N/A           | N/A           | 0.85   |
+| Rank            | N/A         | N/A           | 2             | N/A    |
+| GAT heads       | 1           | N/A           | N/A           | N/A    |
+| SAGE aggregator | mean        | N/A           | N/A           | N/A    |
+
+---
+
+**Appendix F: Training and Validation Results**
+
+This appendix provides the complete training, validation, and test set metrics for the conventional ML baselines (Table 4.1 in the main text). The training set metrics indicate how well each model fits the training data; the validation set metrics were used for early stopping and threshold calibration. The large gap between training and validation performance for Random Forest indicates overfitting despite the depth constraint.
+
+**Table F.1: Conventional ML baseline results across all splits (threshold 0.50).**
+
+| Model               | Split | AUC-ROC | AUC-PR | Precision | Recall | F1     |
+| ------------------- | ----- | ------- | ------ | --------- | ------ | ------ |
+| Logistic Regression | train | 0.9007  | 0.0102 | 0.0060    | 0.8344 | 0.0118 |
+| Logistic Regression | val   | 0.9022  | 0.0115 | 0.0071    | 0.8566 | 0.0141 |
+| Logistic Regression | test  | 0.9378  | 0.0376 | 0.0135    | 0.9295 | 0.0267 |
+| Random Forest       | train | 0.9741  | 0.0615 | 0.0018    | 1.0000 | 0.0035 |
+| Random Forest       | val   | 0.8087  | 0.0187 | 0.0016    | 0.8789 | 0.0031 |
+| Random Forest       | test  | 0.8603  | 0.0619 | 0.0035    | 0.9148 | 0.0070 |
+| XGBoost             | train | 0.9838  | 0.0848 | 0.0135    | 0.9167 | 0.0265 |
+| XGBoost             | val   | 0.8891  | 0.0390 | 0.0138    | 0.7382 | 0.0272 |
+| XGBoost             | test  | 0.9381  | 0.1511 | 0.0265    | 0.8610 | 0.0514 |

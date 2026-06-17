@@ -227,3 +227,50 @@ This appendix reproduces the complete results from Chapter 4 for reference. The 
 | 9 | 0.9591 | 0.0769 | 0.1294 | 0.1028 |
 | 10 | 0.9563 | 0.1875 | 0.1553 | 0.3617 |
 | 11 (latest test) | 0.9732 | 0.4518 | 0.5749 | 0.3300 |
+
+---
+
+**Appendix E: Hyperparameter Configurations**
+
+This appendix presents the hyperparameter configurations used for all neural network models (Table 3.1 in the main text). All experiments used these settings unless otherwise noted in the methodology chapter.
+
+**Table E.1: Hyperparameter configurations.**
+
+| Parameter       | Static GNNs | TemporalGCN   | EvolveGCN-H   | TGN    |
+| --------------- | ----------- | ------------- | ------------- | ------ |
+| Hidden dim      | 128         | 128           | 128           | 128    |
+| Num layers      | 2           | 2             | 2             | N/A    |
+| Dropout         | 0.3         | 0.3           | 0.3           | 0.3    |
+| Learning rate   | 0.001       | 0.001         | 0.001         | 0.003  |
+| Weight decay    | 0.0005      | 0.0005        | 0.0005        | 0.0005 |
+| Grad clip       | 1.0         | 1.0           | 1.0           | 0      |
+| Pos weight mult | 0.1         | 0.1           | 0.1           | 0.01   |
+| Epochs          | 200         | 200           | 200           | 100    |
+| Patience        | 25          | 25            | 25            | 25     |
+| Batch size      | Full graph  | Full snapshot | Full snapshot | 2048   |
+| Memory dim      | N/A         | N/A           | N/A           | 64     |
+| Time dim        | N/A         | N/A           | N/A           | 8      |
+| EMA beta        | N/A         | N/A           | N/A           | 0.85   |
+| Rank            | N/A         | N/A           | 2             | N/A    |
+| GAT heads       | 1           | N/A           | N/A           | N/A    |
+| SAGE aggregator | mean        | N/A           | N/A           | N/A    |
+
+---
+
+**Appendix F: Training and Validation Results**
+
+This appendix provides the complete training, validation, and test set metrics for the conventional ML baselines (Table 4.1 in the main text). The training set metrics indicate how well each model fits the training data; the validation set metrics were used for early stopping and threshold calibration. The large gap between training and validation performance for Random Forest indicates overfitting despite the depth constraint.
+
+**Table F.1: Conventional ML baseline results across all splits (threshold 0.50).**
+
+| Model               | Split | AUC-ROC | AUC-PR | Precision | Recall | F1     |
+| ------------------- | ----- | ------- | ------ | --------- | ------ | ------ |
+| Logistic Regression | train | 0.9007  | 0.0102 | 0.0060    | 0.8344 | 0.0118 |
+| Logistic Regression | val   | 0.9022  | 0.0115 | 0.0071    | 0.8566 | 0.0141 |
+| Logistic Regression | test  | 0.9378  | 0.0376 | 0.0135    | 0.9295 | 0.0267 |
+| Random Forest       | train | 0.9741  | 0.0615 | 0.0018    | 1.0000 | 0.0035 |
+| Random Forest       | val   | 0.8087  | 0.0187 | 0.0016    | 0.8789 | 0.0031 |
+| Random Forest       | test  | 0.8603  | 0.0619 | 0.0035    | 0.9148 | 0.0070 |
+| XGBoost             | train | 0.9838  | 0.0848 | 0.0135    | 0.9167 | 0.0265 |
+| XGBoost             | val   | 0.8891  | 0.0390 | 0.0138    | 0.7382 | 0.0272 |
+| XGBoost             | test  | 0.9381  | 0.1511 | 0.0265    | 0.8610 | 0.0514 |

@@ -4,9 +4,9 @@ This chapter presents the empirical results of the three-tier comparative evalua
 
 **4.1 Baseline Results: Conventional Machine Learning (Tier 1)**
 
-Table 4.1 presents the performance of the three conventional supervised classifiers. These models operate on flat edge feature vectors without access to graph structure or temporal information, establishing the performance floor against which GNN-based models are compared.
+Table 4.1 presents the test set performance of the three conventional supervised classifiers. These models operate on flat edge feature vectors without access to graph structure or temporal information, establishing the performance floor against which GNN-based models are compared. Training and validation set results are provided in Appendix F.
 
-**Table 4.1: Conventional ML baseline results (random 70/15/15 split, threshold 0.50).**
+**Table 4.1: Conventional ML baseline results on the test set (random 70/15/15 split, threshold 0.50).**
 
 | Model | AUC-ROC | AUC-PR | Precision | Recall | F1 |
 |-------|---------|--------|-----------|--------|-----|
@@ -22,9 +22,9 @@ The key insight from the baseline tier is that even the best conventional classi
 
 **4.2 Static GNN Results: Graph Structure Without Time (Tier 2)**
 
-Table 4.2 presents the performance of the three static GNN architectures. These models incorporate graph structure through message passing but treat all transactions as simultaneously present, without temporal ordering.
+Table 4.2 presents the test set performance of the three static GNN architectures. These models incorporate graph structure through message passing but treat all transactions as simultaneously present, without temporal ordering.
 
-**Table 4.2: Static GNN results (random 70/15/15 split, calibrated thresholds).**
+**Table 4.2: Static GNN results on the test set (random 70/15/15 split, calibrated thresholds).**
 
 | Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
 |-------|--------|---------|--------|-----------|--------|-----|--------|
@@ -46,9 +46,9 @@ This section presents results for the three temporal GNN architectures. Unlike t
 
 **4.3.1 Snapshot-Based Temporal Models**
 
-Table 4.3 presents results for the two snapshot-based temporal architectures.
+Table 4.3 presents the test set results for the two snapshot-based temporal architectures.
 
-**Table 4.3: Snapshot temporal GNN results (chronological split, calibrated thresholds).**
+**Table 4.3: Snapshot temporal GNN results on the test set (chronological split, calibrated thresholds).**
 
 | Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
 |-------|--------|---------|--------|-----------|--------|-----|--------|
@@ -61,9 +61,9 @@ EvolveGCN-H is the weakest GNN across all three tiers (AUC-ROC 0.8972, AUC-PR 0.
 
 **4.3.2 Continuous-Time TGN**
 
-Table 4.4 presents results for the continuous-time TGN.
+Table 4.4 presents the test set results for the continuous-time TGN.
 
-**Table 4.4: TGN results (chronological split, calibrated thresholds).**
+**Table 4.4: TGN results on the test set (chronological split, calibrated thresholds).**
 
 | Model | Params | AUC-ROC | AUC-PR | Precision | Recall | F1 | Thresh |
 |-------|--------|---------|--------|-----------|--------|-----|--------|
@@ -98,9 +98,9 @@ The practical interpretation is that TGN gets better the longer it runs. An acco
 
 **4.4 Cross-Model Comparison**
 
-Table 4.6 presents all nine models in a unified leaderboard, ordered by AUC-PR. The evaluation protocol column is essential for fair comparison: models evaluated on random splits are being tested on an easier task than those evaluated on chronological splits.
+Table 4.6 presents the test set performance of all nine models in a unified leaderboard, ordered by AUC-PR. The evaluation protocol column is essential for fair comparison: models evaluated on random splits are being tested on an easier task than those evaluated on chronological splits.
 
-**Table 4.6: Complete model leaderboard, ordered by AUC-PR.**
+**Table 4.6: Complete model leaderboard on the test set, ordered by AUC-PR.**
 
 | Tier | Model | Params | AUC-ROC | AUC-PR | F1 | Eval Split |
 |------|-------|--------|---------|--------|-----|------------|

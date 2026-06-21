@@ -199,7 +199,6 @@ The remainder of this report is structured as follows.
 
 ---
 
-
 # Chapter 2: Theoretical Framework
 
 **2.1 Money Laundering Typologies and Regulatory Context**
@@ -214,7 +213,7 @@ Two additional considerations are relevant to this study. First, laundering patt
 
 **2.2 Conventional Machine Learning for AML Detection**
 
-Conventional machine learning approaches to AML detection treat each transaction as an independent feature vector and apply supervised classification methods to distinguish laundering from legitimate activity. Chen et al. (2018) provided a comprehensive review of machine learning techniques applied to suspicious transaction detection, covering logistic regression, decision trees, support vector machines, and ensemble methods. Their review identified two persistent limitations: first, the extreme class imbalance inherent in AML data, where laundering transactions constitute a tiny fraction of total volume, makes standard classifiers prone to high false positive rates; second, treating transactions as independent observations discards the relational structure that characterises laundering behaviour.
+Conventional machine learning approaches to AML detection treat each transaction as an independent feature vector and apply supervised classification methods to distinguish laundering from legitimate activity. Chen et al. (2018) provided a comprehensive review of machine learning techniques applied to suspicious transaction detection, covering logistic regression, decision trees, support vector machines, and ensemble methods. Their review identified two persistent limitations: first, the extreme class imbalance inherent in AML data, where laundering transactions constitute a tiny fraction of total volume, makes standard classifiers prone to high false positive rates; second, treating transactions as independent observations discards the relational structure that characterises laundering behaviour. Kute et al. (2021) extended this line of review to deep learning and explainable AI approaches for AML, identifying CNNs, autoencoders, and graph deep learning as emerging techniques, and confirming that limited access to real transaction data and extreme class imbalance remain the dominant barriers to progress.
 
 Logistic regression serves as the simplest baseline, modelling the log-odds of a transaction being suspicious as a linear function of its features. Its interpretability is an advantage in compliance contexts where regulatory requirements demand explainable decisions, but its linear decision boundary cannot capture the nonlinear interactions that characterise complex laundering schemes. Random forest classifiers (Breiman, 2001) address this by ensembling multiple decision trees trained on random subsets of features and samples, producing nonlinear decision boundaries while maintaining reasonable interpretability through feature importance scores. XGBoost (Chen & Guestrin, 2016) extends gradient boosting with regularisation and optimised computation, and has become a standard benchmark in tabular classification tasks across domains including financial crime detection.
 
@@ -238,17 +237,21 @@ These three architectures represent a progression of design philosophy: GCN prov
 
 The application of GNNs to financial crime detection has grown substantially since the late 2010s. Weber et al. (2019) provided one of the earliest demonstrations, applying GCN and GraphSAGE to the Elliptic Bitcoin dataset to classify cryptocurrency transactions as licit or illicit. Their work established the empirical precedent that graph-based models can outperform conventional classifiers on financial transaction data by capturing relational patterns. However, the Elliptic dataset represents a specific cryptocurrency context; its transaction patterns, anonymised participants, and lack of regulatory reporting obligations differ substantially from the banking transaction domain.
 
-Johannessen and Jullum (2025) applied heterogeneous GNNs to real-world banking data from DNB, Norway's largest financial institution, demonstrating that graph-based models outperformed conventional classifiers in detecting money laundering across multiple relationship types. Their work is significant because it used genuine institutional transaction data, providing ecological validity that studies on synthetic or cryptocurrency data cannot claim. However, their dataset is proprietary and non-public, making their results unreproducible by independent researchers and unusable as a benchmark for comparative evaluation.
+Johannessen and Jullum (2025) applied heterogeneous GNNs to real-world banking data from DNB, Norway's largest financial institution, demonstrating that graph-based models outperformed conventional classifiers in detecting money laundering across multiple relationship types. Their work is significant because it used genuine institutional transaction data, providing ecological validity that studies on synthetic or cryptocurrency data cannot claim. However, their dataset is proprietary and non-public, making their results unreproducible by independent researchers and unusable as a benchmark for comparative evaluation. Cheng et al. (2023) proposed group-aware deep graph learning for organised money laundering, using community-centric encoding to capture shared transaction patterns among account groups.
 
-Cheng et al. (2024) provided a comprehensive review of GNN architectures applied to financial fraud detection across domains including credit card fraud, insurance fraud, and money laundering. Their review confirmed that GCN, GAT, and GraphSAGE are the predominant static architectures used in financial fraud research, and explicitly identified the incorporation of temporal dynamics into GNN architectures as a key future research direction. This finding directly motivates the temporal modelling component of the present study.
+Cheng et al. (2024) provided a comprehensive review of GNN architectures applied to financial fraud detection across domains including credit card fraud, insurance fraud, and money laundering (see also Motie & Raahemi, 2024; Li et al., 2025). Their review confirmed that GCN, GAT, and GraphSAGE are the predominant static architectures used in financial fraud research, and explicitly identified the incorporation of temporal dynamics into GNN architectures as a key future research direction. This finding directly motivates the temporal modelling component of the present study.
 
 Altman et al. (2023) published the IBM Transactions for Anti-Money Laundering dataset at NeurIPS 2023, a large-scale synthetic dataset specifically designed to serve as a public benchmark for GNN-based AML research. Their paper reported baseline results using static GNNs (GCN, GAT, and GraphSAGE) and demonstrated that all three outperformed non-graph baselines. However, the dataset paper evaluated only static architectures and explicitly noted that temporal modelling was left to future work. This creates the empirical gap that the present study addresses.
 
 Dou et al. (2020) addressed a challenge particularly relevant to AML detection: applying GNNs to fraud detection under severe class imbalance. Their work proposed techniques to improve minority fraud node detection in imbalanced graph classification settings, including adapted loss functions and sampling strategies. The class imbalance in their experiments, while substantial, was less extreme than the approximately 1:1000 ratio in the IBM AML dataset, suggesting that additional adaptations may be necessary for AML-specific applications.
 
+A related challenge is fraudster camouflage, in which bad actors deliberately manipulate their attributes and connections to evade detection. Deng et al. (2022) proposed a contrastive graph neural network (CACO-GNN) that learns node representations robust to such camouflage, achieving an 18.5% improvement in F1-macro on real-world fraud datasets. Camouflage is directly relevant to AML, where launderers actively adapt their transaction patterns to avoid rule-based triggers.
+
+Ren et al. (2023) applied dynamic GNNs with self-attentive temporal convolution to collaborative fraud detection, bridging static graph methods and temporal modelling. Tong and Shen (2023) directly coupled GNN-based representation learning with class imbalance handling in a unified architecture for financial transaction fraud detection, demonstrating that imbalance-aware graph learning outperforms generic GNNs on financial benchmarks. More broadly, Ma et al. (2023) surveyed deep graph anomaly detection, establishing a taxonomy spanning node-level, edge-level, and subgraph-level anomalies and identifying dynamic graph anomaly detection and class-imbalanced anomaly detection as open research directions directly relevant to the present study.
+
 **2.4 Temporal Graph Neural Networks**
 
-The architectures discussed in Section 2.3 operate on static graphs: all nodes and edges are treated as simultaneously present, and temporal ordering is not modelled. For many real-world graphs, including financial transaction networks, this assumption is unrealistic. Money laundering is an inherently temporal process: transactions occur in sequence, behavioural patterns evolve, and the significance of an interaction depends on when it occurs relative to prior activity. Temporal GNNs address this by incorporating time into the graph learning process. Two broad paradigms exist: snapshot-based approaches that discretise time into a sequence of static graphs, and continuous-time approaches that process individual events with their exact timestamps.
+The architectures discussed in Section 2.3 operate on static graphs: all nodes and edges are treated as simultaneously present, and temporal ordering is not modelled. For many real-world graphs, including financial transaction networks, this assumption is unrealistic. Money laundering is an inherently temporal process: transactions occur in sequence, behavioural patterns evolve, and the significance of an interaction depends on when it occurs relative to prior activity. Temporal GNNs address this by incorporating time into the graph learning process. Two broad paradigms exist: snapshot-based approaches that discretise time into a sequence of static graphs, and continuous-time approaches that process individual events with their exact timestamps. Barros et al. (2021) provided a comprehensive survey of dynamic graph embedding methods, classifying approaches along four dimensions (graph type, temporal mechanism, learning technique, and downstream task) and confirming that both paradigms are well-established, with temporal link prediction and anomaly detection as the most active application areas.
 
 **2.4.1 Snapshot-Based Approaches: TemporalGCN and EvolveGCN**
 
@@ -276,11 +279,11 @@ A temporal GNN variant relevant to this work is the graph-based LSTM approach ap
 
 The evaluation of machine learning models on heavily class-imbalanced data requires careful metric selection. In the IBM AML HI-Small dataset, laundering transactions constitute approximately 0.1% of all transactions. Under such conditions, classification accuracy is a misleading performance indicator: a model that classifies every transaction as legitimate achieves 99.9% accuracy but detects zero laundering cases.
 
-He and Garcia (2009) provided a comprehensive analysis of class imbalance challenges in machine learning, reviewing resampling techniques, cost-sensitive learning approaches, and evaluation metric selection. They demonstrated that precision, recall, and the F1-score provide more informative performance assessment than accuracy under class imbalance, and that the Area Under the Receiver Operating Characteristic curve (AUC-ROC) and the Area Under the Precision-Recall curve (AUC-PR) offer complementary perspectives on model discrimination. AUC-ROC measures overall discriminative power across all classification thresholds and is insensitive to class distribution, making it useful for comparing models across datasets with different imbalance ratios. AUC-PR, by contrast, focuses on the minority class and is more sensitive to improvements in detecting the rare positive cases. For AML detection, where the operational cost of false negatives (missed laundering) is high but the cost of false positives (alert fatigue from over-alerting) is also substantial, both metrics are relevant.
+He and Garcia (2009) provided a comprehensive analysis of class imbalance challenges in machine learning, reviewing resampling techniques, cost-sensitive learning approaches, and evaluation metric selection. Guo et al. (2017) extended this survey to the deep learning era, covering resampling, cost-sensitive, and ensemble methods across diverse application domains. He and Garcia demonstrated that precision, recall, and the F1-score provide more informative performance assessment than accuracy under class imbalance, and that the Area Under the Receiver Operating Characteristic curve (AUC-ROC) and the Area Under the Precision-Recall curve (AUC-PR) offer complementary perspectives on model discrimination. AUC-ROC measures overall discriminative power across all classification thresholds and is insensitive to class distribution, making it useful for comparing models across datasets with different imbalance ratios. AUC-PR, by contrast, focuses on the minority class and is more sensitive to improvements in detecting the rare positive cases. For AML detection, where the operational cost of false negatives (missed laundering) is high but the cost of false positives (alert fatigue from over-alerting) is also substantial, both metrics are relevant.
 
 The choice of loss function during training is equally important. Standard binary cross-entropy loss treats false positives and false negatives symmetrically, which is inappropriate when the classes are severely imbalanced. Weighted binary cross-entropy, where the minority class contribution is scaled by a factor inversely proportional to its prevalence, provides a standard remedy. However, the magnitude of the weight introduces a new consideration. With a laundering prevalence of approximately 0.1%, the inverse-frequency weight exceeds 1000. This means minority class gradients are three orders of magnitude larger than majority class gradients during training, which has implications for gradient-based optimisation that are discussed in the context of model-specific training in Chapter 3.
 
-Dou et al. (2020) addressed the intersection of GNNs and class imbalance, proposing techniques specific to graph-based fraud detection. Their work demonstrated that standard GNN training procedures can be inadequate under extreme class imbalance because the message-passing mechanism propagates information from both classes, potentially diluting the minority class signal. They proposed adapted training strategies, including class-balanced sampling of training edges, which inform the training protocol adopted in this study.
+Dou et al. (2020) addressed the intersection of GNNs and class imbalance, proposing techniques specific to graph-based fraud detection. Their work demonstrated that standard GNN training procedures can be inadequate under extreme class imbalance because the message-passing mechanism propagates information from both classes, potentially diluting the minority class signal. They proposed adapted training strategies, including class-balanced sampling of training edges, which inform the training protocol adopted in this study. Wu et al. (2024) extended this direction with dual-channel graph convolution and label-aware sampling to jointly address disassortativity and class imbalance in fraud graphs.
 
 **2.6 Research Gap Synthesis**
 
@@ -782,15 +785,21 @@ Alarab, I., & Prakoonwit, S. (2023). Graph-based LSTM for anti-money laundering:
 
 Altman, E., Blanuša, J., von Niederhäusern, L., Egressy, B., Anghel, A., & Atasu, K. (2023). Realistic synthetic financial transactions for anti-money laundering models. In *Advances in Neural Information Processing Systems 36 (NeurIPS 2023): Datasets and Benchmarks Track*. https://proceedings.neurips.cc/paper_files/paper/2023/hash/5f38404edff6f3f642d6fa5892479c42-Abstract-Datasets_and_Benchmarks.html
 
+Barros, C. D. T., Mendonça, M. R. F., Vieira, A. B., & Ziviani, A. (2021). A survey on embedding dynamic graphs. *ACM Computing Surveys*, *55*(1), Article 10, 1-37. https://doi.org/10.1145/3483595
+
 Breiman, L. (2001). Random forests. *Machine Learning*, *45*(1), 5-32. https://doi.org/10.1023/A:1010933404324
 
 Chen, T., & Guestrin, C. (2016). XGBoost: A scalable tree boosting system. In *Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining* (pp. 785-794). ACM. https://doi.org/10.1145/2939672.2939785
 
 Chen, Z., Van Khoa, L. D., Teoh, E. N., Nazir, A., Karuppiah, E. K., & Lam, K. S. (2018). Machine learning techniques for anti-money laundering (AML) solutions in suspicious transaction detection: A review. *Knowledge and Information Systems*, *57*(2), 245-285. https://doi.org/10.1007/s10115-017-1144-z
 
+Cheng, D., Ye, Y., Xiang, S., Ma, Z., Zhang, Y., & Jiang, C. (2023). Anti-money laundering by group-aware deep graph learning. *IEEE Transactions on Knowledge and Data Engineering*. https://doi.org/10.1109/TKDE.2023.3272396
+
 Cheng, D., Zou, Y., Xiang, S., & Jiang, C. (2024). Graph neural networks for financial fraud detection: A review. *Frontiers of Computer Science*, *19*(5), Article 19505. https://doi.org/10.1007/s11704-024-40474-y
 
 Cho, K., Van Merrienboer, B., Gulcehre, C., Bahdanau, D., Bougares, F., Schwenk, H., & Bengio, Y. (2014). Learning phrase representations using RNN encoder-decoder for statistical machine translation. In *Proceedings of the 2014 Conference on Empirical Methods in Natural Language Processing (EMNLP)* (pp. 1724-1734). ACL. https://doi.org/10.3115/v1/D14-1179
+
+Deng, Z., Xin, G., Liu, Y., Wang, W., & Wang, B. (2022). Contrastive graph neural network-based camouflaged fraud detector. *Information Sciences*, *618*, 39-52. https://doi.org/10.1016/j.ins.2022.10.072
 
 Dou, Y., Liu, Z., Sun, L., Deng, Y., Peng, H., & Yu, P. S. (2020). Enhancing graph neural network-based fraud detectors against camouflaged fraudsters. In *Proceedings of the 29th ACM International Conference on Information and Knowledge Management (CIKM)* (pp. 315-324). ACM. https://doi.org/10.1145/3340531.3411903
 
@@ -799,6 +808,8 @@ FATF. (2023). *International standards on combating money laundering and the fin
 Fey, M., & Lenssen, J. E. (2019). Fast graph representation learning with PyTorch Geometric. In *ICLR 2019 Workshop on Representation Learning on Graphs and Manifolds*. https://arxiv.org/abs/1903.02428
 
 Grover, A., & Leskovec, J. (2016). node2vec: Scalable feature learning for networks. In *Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining* (pp. 855-864). ACM. https://doi.org/10.1145/2939672.2939754
+
+Guo, H., Li, Y., Shang, J., Gu, M., Huang, Y., & Gong, B. (2017). Learning from class-imbalanced data: Review of methods and applications. *Expert Systems with Applications*, *73*, 220-239. https://doi.org/10.1016/j.eswa.2016.12.035
 
 Hamilton, W. L., Ying, R., & Leskovec, J. (2017). Inductive representation learning on large graphs. In *Advances in Neural Information Processing Systems 30 (NeurIPS 2017)* (pp. 1024-1034). https://papers.nips.cc/paper/2017/hash/5dd9db5e033da9c6fb5ba83c7a7ebea9-Abstract.html
 
@@ -812,9 +823,17 @@ Jullum, M., Løland, A., Huseby, R. B., Ånonsen, G., & Lorentzen, J. (2020). De
 
 Kipf, T. N., & Welling, M. (2017). Semi-supervised classification with graph convolutional networks. In *International Conference on Learning Representations (ICLR 2017)*. https://arxiv.org/abs/1609.02907
 
+Kute, D. V., Pradhan, B., Shukla, N., & Alamri, A. (2021). Deep learning and explainable artificial intelligence techniques applied for detecting money laundering – A critical review. *IEEE Access*, *9*, 82300-82317. https://doi.org/10.1109/ACCESS.2021.3086230
+
 Levi, M. (2002). Money laundering and its regulation. *The Annals of the American Academy of Political and Social Science*, *582*(1), 181-194. https://doi.org/10.1177/000271620258200113
 
+Li, E., Chen, M., Xiang, S., & Chen, L. (2025). Graph learning-empowered financial fraud detection: Progress and future directions. *Intelligent Computing*, *4*, Article 0146. https://doi.org/10.34133/icomputing.0146
+
 Lin, T.-Y., Goyal, P., Girshick, R., He, K., & Dollar, P. (2017). Focal loss for dense object detection. In *Proceedings of the IEEE International Conference on Computer Vision (ICCV)* (pp. 2980-2988). IEEE. https://doi.org/10.1109/ICCV.2017.324
+
+Ma, X., Wu, J., Xue, S., Yang, J., Zhou, C., Sheng, Q. Z., Xiong, H., & Akoglu, L. (2023). A comprehensive survey on graph anomaly detection with deep learning. *IEEE Transactions on Knowledge and Data Engineering*, *35*(12), 12012-12038. https://doi.org/10.1109/TKDE.2021.3118815
+
+Motie, S., & Raahemi, B. (2024). Financial fraud detection using graph neural networks: A systematic review. *Expert Systems with Applications*, *240*, Article 122156. https://doi.org/10.1016/j.eswa.2023.122156
 
 Oztas, B., Cetinkaya, D., Adedoyin, F., & Budka, M. (2023). SAML-D: A synthetic anti-money laundering dataset with controlled complexity. *Data in Brief*, *51*, 109692. https://doi.org/10.1016/j.dib.2023.109692
 
@@ -822,9 +841,13 @@ Pareja, A., Domeniconi, G., Chen, J., Ma, T., Suzumura, T., Kanezashi, H., Kaler
 
 Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., & Duchesnay, E. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research*, *12*, 2825-2830. https://www.jmlr.org/papers/volume12/pedregosa11a/pedregosa11a.pdf
 
+Ren, L., Hu, R., Li, D., Liu, Y., Wu, J., Zang, Y., & Hu, W. (2023). Dynamic graph neural network-based fraud detectors against collaborative fraudsters. *Knowledge-Based Systems*, *278*, Article 110888. https://doi.org/10.1016/j.knosys.2023.110888
+
 Rossi, E., Chamberlain, B., Frasca, F., Eynard, D., Monti, F., & Bronstein, M. (2020). Temporal graph networks for deep learning on dynamic graphs. *arXiv preprint arXiv:2006.10637*. https://arxiv.org/abs/2006.10637
 
 Sekaran, U., & Bougie, R. (2019). *Research methods for business: A skill-building approach* (8th ed.). Wiley.
+
+Tong, G., & Shen, J. (2023). Financial transaction fraud detector based on imbalance learning and graph neural network. *Applied Soft Computing*, *149*, Article 110984. https://doi.org/10.1016/j.asoc.2023.110984
 
 Trivedi, R., Farajtabar, M., Biswal, P., & Zha, H. (2019). DyRep: Learning representations over dynamic graphs. In *International Conference on Learning Representations (ICLR 2019)*. https://openreview.net/forum?id=HyePrhR5KX
 
@@ -837,6 +860,8 @@ Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Ka
 Veličković, P., Cucurull, G., Casanova, A., Romero, A., Lio, P., & Bengio, Y. (2018). Graph attention networks. In *International Conference on Learning Representations (ICLR 2018)*. https://arxiv.org/abs/1710.10903
 
 Weber, M., Domeniconi, G., Chen, J., Weidele, D. K. I., Bellei, C., Robinson, T., & Leiserson, C. E. (2019). Anti-money laundering in bitcoin: Experimenting with graph convolutional networks for financial forensics. In *KDD 2019 Workshop on Anomaly Detection in Finance*. https://arxiv.org/abs/1908.02591
+
+Wu, J., Hu, R., Li, D., Ren, L., Hu, W., & Zang, Y. (2024). A GNN-based fraud detector with dual resistance to graph disassortativity and imbalance. *Information Sciences*, *669*, Article 120580. https://doi.org/10.1016/j.ins.2024.120580
 
 Xu, K., Hu, W., Leskovec, J., & Jegelka, S. (2019). How powerful are graph neural networks? In *International Conference on Learning Representations (ICLR 2019)*. https://arxiv.org/abs/1810.00826
 
@@ -1002,14 +1027,15 @@ Running all reproduction commands produces the following expected metrics (minor
 
 **Appendix C: Generative AI Usage Declaration**
 
-This appendix declares the use of generative AI tools in the preparation of this thesis, in accordance with the Amsterdam University of Applied Sciences Master Project module guide requirements.
+This appendix declares the use of generative AI tools in the preparation of this thesis, in accordance with the Amsterdam University of Applied Sciences Master Project module guide requirements (Appendix F).
 
 **Tool used:** ChatGPT (OpenAI).
 
 **Nature of use:**
 
-- Assistance with implementing and debugging Python code for GNN architectures, model training loops, based on my own architectural design decisions and research methodology. Specific examples include debugging the TGN data leakage bug (train/eval memory state mismatch), resolving the PyG TGNMemory dtype incompatibility, and implementing the EMA-based memory module.
-- Reviewing chapter drafts I had written for clarity, consistency, and grammatical correctness.
+- Assistance with implementing and debugging Python code for GNN architectures and model training loops, based on the author's own architectural design decisions and research methodology.
+- Reviewing chapter drafts the author had written for clarity, consistency, and grammatical correctness.
+- 
 
 **Nature of author contribution:**
 
@@ -1019,6 +1045,20 @@ This appendix declares the use of generative AI tools in the preparation of this
 - The author wrote all chapter drafts, provided all substantive content (experimental results, architectural descriptions, methodological reasoning), directed the revision process, reviewed all AI-suggested edits for accuracy and appropriateness, and takes full responsibility for the final content of this thesis.
 
 **Verification:** All factual claims, numerical results, and citations in this thesis have been verified by the author against primary sources (experimental logs, published papers, and the assessment rubric).
+
+---
+
+**Examples of Prompts Used**
+
+The following examples illustrate the types of prompts used with generative AI tools during this research. The following prompts illustrate the nature of interactions with the tool.
+
+**Prompt 1: Draft Review (Chapter 4):**
+
+"I'm writing Chapter 4 (Results) of my AML GNN thesis. I've attached the chapter as .txt. Please review it and flag any claims that aren't supported by the numbers in my results tables. My key findings are: TGN achieves 0.968 AUC-ROC on chronological split, matching static GCN's 0.971 on random split, and TGN's AUC-PR of 0.32 is 70% higher than GCN's 0.19. I want to make sure I'm comparing fairly given the different evaluation protocols."
+
+**Prompt 2: TGN Data Leakage Debugging (Section 3.4.4):**
+
+"My TGN model has a training/eval mismatch: train AUC-ROC hits 0.99 by epoch 5 but validation collapses to 0.73 around epoch 10. Here's my forward() method. The memory update appears to happen before the prediction, which would introduce data leakage during training. Can you trace through the memory update order and confirm?"
 
 ---
 

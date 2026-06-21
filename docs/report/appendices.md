@@ -169,22 +169,36 @@ results/            - Training logs and model checkpoints
 
 **Appendix C: Generative AI Usage Declaration**
 
-This appendix declares the use of generative AI tools in the preparation of this thesis, in accordance with the Amsterdam University of Applied Sciences Master Project module guide requirements.
+This appendix declares the use of generative AI tools in the preparation of this thesis, in accordance with the Amsterdam University of Applied Sciences Master Project module guide requirements (Appendix F).
 
-**Tool used:** Claude Code (Anthropic), powered by Claude Opus 4.7.
+**Tool used:** ChatGPT (OpenAI).
 
 **Nature of use:**
-- Assistance with drafting and revising report chapter text based on experimental results, methodological documentation, and supervisor feedback provided by the author.
+- Assistance with implementing and debugging Python code for GNN architectures and model training loops, based on the author's own architectural design decisions and research methodology.
+- Reviewing chapter drafts the author had written for clarity, consistency, and grammatical correctness.
 - Formatting of tables and structural organisation of report content.
-- Code review and documentation of the software tool developed for this research.
 
 **Nature of author contribution:**
 - All experimental design, implementation, and execution was performed by the author.
 - All research questions, methodological decisions, and conclusions were formulated by the author.
 - All literature review, citation selection, and theoretical framework development was performed by the author.
-- The author directed the drafting process, provided all substantive content (experimental results, architectural descriptions, methodological reasoning), reviewed all AI-generated text for accuracy and appropriateness, and takes full responsibility for the final content of this thesis.
+- The author wrote all chapter drafts, provided all substantive content (experimental results, architectural descriptions, methodological reasoning), directed the revision process, reviewed all AI-suggested edits for accuracy and appropriateness, and takes full responsibility for the final content of this thesis.
 
 **Verification:** All factual claims, numerical results, and citations in this thesis have been verified by the author against primary sources (experimental logs, published papers, and the assessment rubric).
+
+---
+
+**Representative Examples of Prompts Used**
+
+The following examples illustrate the types of prompts used with generative AI tools during this research. The following prompts illustrate the nature of interactions with the tool.
+
+**Prompt 1: Draft Review (Chapter 4):**
+
+"I'm writing Chapter 4 (Results) of my AML GNN thesis. I've attached the chapter as .txt. Please review it and flag any claims that aren't supported by the numbers in my results tables. My key findings are: TGN achieves 0.968 AUC-ROC on chronological split, matching static GCN's 0.971 on random split, and TGN's AUC-PR of 0.32 is 70% higher than GCN's 0.19. I want to make sure I'm comparing fairly given the different evaluation protocols."
+
+**Prompt 2: TGN Data Leakage Debugging (Section 3.4.4):**
+
+"My TGN model has a training/eval mismatch: train AUC-ROC hits 0.99 by epoch 5 but validation collapses to 0.73 around epoch 10. Here's my forward() method. The memory update appears to happen before the prediction, which would introduce data leakage during training. Can you trace through the memory update order and confirm?"
 
 ---
 

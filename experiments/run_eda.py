@@ -245,14 +245,27 @@ def main() -> None:
     }
 
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.5), dpi=DPI)
+    # Left: volume per day on a log scale, so the low-volume tail (days 10+,
+    # hundreds of transactions) remains visible next to the millions in days 0-9.
     axes[0].bar(vol.index, vol.values, color=COLOR_LEGIT)
-    axes[0].set_xlabel("day"); axes[0].set_ylabel("transactions")
+    axes[0].set_yscale("log")
+    axes[0].set_xlabel("day"); axes[0].set_ylabel("transactions/day (log)")
     axes[0].set_title("Transaction volume over time")
-    axes[1].plot(rate.index, rate.values, marker="o", color=COLOR_LAUNDER)
+    # Right: laundering rate per day (line) with daily volume overlaid on a
+    # secondary log axis (grey bars), making it explicit that the high late-period
+    # rates are computed over a negligible number of transactions.
+    ax2 = axes[1].twinx()
+    ax2.bar(vol.index, vol.values, color="0.82", zorder=0)
+    ax2.set_yscale("log")
+    ax2.set_ylabel("transactions/day (log)", color="0.55")
+    ax2.tick_params(axis="y", labelcolor="0.55")
+    axes[1].set_zorder(ax2.get_zorder() + 1)   # keep the rate line in front
+    axes[1].patch.set_visible(False)           # let the volume bars show through
+    axes[1].plot(rate.index, rate.values, marker="o", color=COLOR_LAUNDER, zorder=3)
     axes[1].axhline(prevalence * 100, ls="--", c="black", lw=0.8,
                     label=f"overall {prevalence*100:.2f}%")
     axes[1].set_xlabel("day"); axes[1].set_ylabel("laundering rate (%)")
-    axes[1].set_title("Laundering prevalence over time"); axes[1].legend(fontsize=8)
+    axes[1].set_title("Laundering rate vs daily volume"); axes[1].legend(fontsize=8, loc="center left")
     savefig(fig, "05_temporal.png")
 
     # ---- 5. Feature distributions: laundering vs legitimate ----------------

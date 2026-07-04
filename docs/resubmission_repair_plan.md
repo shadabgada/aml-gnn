@@ -169,6 +169,12 @@ Re-run/mechanical (D, F, H) is a large share → consistent with "minor repairs.
 - **Reference to add/verify:** cited "Velickovic et al., 2018" in the GAT §4.3 para — confirm it's in references (GAT paper; likely present).
 - **STILL PENDING (new tasks 6/7/8):** (6) Ch5 headline numbers still OLD (GCN 0.1882, TGN 0.3195/119K, GAT 0.0958, XGB 0.1511, EvolveGCN 578K/33M) — update both files (ties to Ch5 E/I rewrite); (7) global "Section 4.x" cross-ref sweep (Ch1/Ch2/Ch5) after renumbering; (8) §3.4.4 remaining TGN bug-narrative standalone-rule review. Plus original workstreams E (Ch4/Ch5 explainability), F (scalability), I (conclusions), H (docstrings), page-cut, Word port. **Uncommitted:** `run_eda.py` + all `docs/report/*` edits + `resubmission_repair_plan.md`.
 
+## 2026-07-04 (later) — Ch5 REVISED + whole-report number consistency DONE
+
+- **Ch5 fully revised** (both files): all headline numbers + derived stats refreshed (GCN +41% / TGN +120% over XGBoost; TGN +56% over GCN; hierarchy TGN>GCN>XGB>RF>GAT>TemporalGCN>EvolveGCN>SAGE>LR; EvolveGCN 2.2M). **Deleted the leftover random-vs-chronological narrative** (§5.1.2/§5.1.5/§5.2 — it contradicted the corrected Ch3/Ch4). **Per-slice claim reframed** (§5.2) to the warm-vs-cold-at-low-prevalence framing (no "0.05→0.45 memory accumulation" overclaim). **§5.3 practitioner section reworked around TGN's fresh calibrated operating point** (22% precision / 42% recall; default 84%/17% noted as the high-precision option) — Table 5.1 + §5.3.2 alert-burden math redone; §5.4 limitations de-hardwared ("memory-constrained" not "single CPU"), EMA-vs-GRU bug reference softened.
+- **Whole-report old-number sweep = 0** across Ch1-5 + appendices + combined draft. Report is now numerically self-consistent on the fresh chronological results.
+- **STILL PENDING:** task 8 (§3.4.4 remaining TGN four-issues narrative standalone-rule review); workstreams **E** (Ch4 effectiveness-limitation para + Ch5 explainability recommendation + FATF-2021 + optional permutation demo), **F** (scalability run + writeup), **I** (deepen conclusions/theory), **H** (docstrings), page-cut to <=40, Word port. Decision-5 warm-eval, robustness, EDA, ablation all now reflected in the report.
+
 ## Pre-execution checks — RESOLVED (2026-07-01)
 
 - [x] **Code audited** — root `src/` + `experiments/`; findings in "Code audit" section above.

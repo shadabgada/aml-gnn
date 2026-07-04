@@ -276,6 +276,14 @@ This appendix presents the hyperparameter configurations used for all neural net
 | GAT heads       | 1           | N/A           | N/A           | N/A    |
 | SAGE aggregator | mean        | N/A           | N/A           | N/A    |
 
+**Table E.2: Principal TGN candidate configurations, compared on the validation set (chronological protocol). Candidates were compared on validation AUC-ROC and AUC-PR before the final configuration was selected.**
+
+| Candidate configuration | Best val AUC-ROC | Validation behaviour | Selected |
+| --- | --- | --- | --- |
+| Gradient clipping enabled | ~0.85-0.89 | minority class not learned; val AUC-PR at the prevalence floor | No |
+| Clipping disabled, larger memory (~119K params) | 0.946 | learns the minority class | No (more parameters, no validation gain) |
+| Clipping disabled, compact memory 64/8 (85,905 params) | 0.946 | learns the minority class | Yes (final) |
+
 ---
 
 **Appendix F: Training and Validation Results**

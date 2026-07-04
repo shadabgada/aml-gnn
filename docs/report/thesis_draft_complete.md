@@ -467,7 +467,9 @@ The use of pos_weight rather than alternative class imbalance handling technique
 
 **3.5.2 Hyperparameter Configuration**
 
-Hyperparameters were set based on architectural defaults from the original papers, with manual adjustment where needed for training stability on this dataset. No automated hyperparameter optimisation (grid search, random search, or Bayesian optimisation) was performed, which is acknowledged as a limitation. The full hyperparameter configurations for all models are provided in Appendix E.
+Hyperparameters for the conventional and static-GNN models were set from architectural defaults in the original papers, adjusted where necessary for training stability on this dataset. No automated hyperparameter optimisation (grid, random, or Bayesian search) was performed, which is acknowledged as a limitation. The full configurations are listed in Appendix E (Table E.1).
+
+The continuous-time TGN required more deliberate configuration selection. Rather than ad hoc tuning, candidate configurations were trained under the chronological protocol and compared on validation AUC-ROC and AUC-PR, varying the memory and time-encoding dimensions (a 128/16 setting against a compact 64/8 setting), the learning rate, the class-weight multiplier, and whether gradients were clipped. Two findings determined the final choice. First, gradient clipping had to be disabled: under the large positive-class weight required by the 0.1% prevalence, clipping suppressed the minority-class gradient and the model failed to learn the positive class, leaving validation AUC-PR at the prevalence floor (Section 3.4.4). Second, the compact 64/8 configuration (85,905 parameters) matched the larger configuration on validation while using far fewer parameters, and was therefore selected. The final configuration (learning rate 0.003, pos_weight multiplier 0.01, gradient clipping disabled, EMA beta 0.85, memory dimension 64, time dimension 8) reached a best validation AUC-ROC of 0.946. The principal candidates and their validation outcomes are summarised in Appendix E (Table E.2).
 
 **3.5.3 Evaluation Metrics and Threshold Calibration**
 
@@ -1260,6 +1262,14 @@ This appendix presents the hyperparameter configurations used for all neural net
 | Rank            | N/A         | N/A           | 2             | N/A    |
 | GAT heads       | 1           | N/A           | N/A           | N/A    |
 | SAGE aggregator | mean        | N/A           | N/A           | N/A    |
+
+**Table E.2: Principal TGN candidate configurations, compared on the validation set (chronological protocol). Candidates were compared on validation AUC-ROC and AUC-PR before the final configuration was selected.**
+
+| Candidate configuration | Best val AUC-ROC | Validation behaviour | Selected |
+| --- | --- | --- | --- |
+| Gradient clipping enabled | ~0.85-0.89 | minority class not learned; val AUC-PR at the prevalence floor | No |
+| Clipping disabled, larger memory (~119K params) | 0.946 | learns the minority class | No (more parameters, no validation gain) |
+| Clipping disabled, compact memory 64/8 (85,905 params) | 0.946 | learns the minority class | Yes (final) |
 
 ---
 

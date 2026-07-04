@@ -61,12 +61,14 @@ class GNNTrainer:
         lr_factor: float = 0.5,
         device: str = "cpu",
         log_interval: int = 10,
+        edge_batch: int = 500_000,
     ):
         self.model = model.to(device)
         self.data = data.to(device)
         self.device = device
         self.log_interval = log_interval
         self.grad_clip = grad_clip
+        self.edge_batch = edge_batch
 
         # Loss — moderate the extreme pos_weight ---------------------------
         moderated_pw = pos_weight * pos_weight_multiplier
@@ -98,9 +100,22 @@ class GNNTrainer:
         self.calibrated_threshold_recall90: float = 0.5
 
         # Logging ----------------------------------------------------------
+        # Per-epoch series + a sparser train-metric series (train AUC over 3.5M
+        # edges is costly, so it is sampled every log_interval epochs).
         self.history: Dict[str, list] = {
-            "epoch": [], "train_loss": [], "val_auc": [], "lr": [],
+            "epoch": [], "train_loss": [], "val_auc": [], "val_auc_pr": [], "lr": [],
+            "train_eval_epoch": [], "train_auc": [], "train_auc_pr": [],
         }
+
+    def _save_history(self) -> None:
+        """Persist per-epoch history for learning-curve plots."""
+        import json
+        import os
+        out_dir = "results/curves"
+        os.makedirs(out_dir, exist_ok=True)
+        name = self.model.__class__.__name__
+        with open(os.path.join(out_dir, f"{name}_history.json"), "w") as f:
+            json.dump(self.history, f, indent=2)
 
     def train(self, num_epochs: int = 200) -> Dict[str, list]:
         """Run the full training loop.
@@ -118,7 +133,7 @@ class GNNTrainer:
             # --- Train step ---
             train_loss = self._train_epoch()
 
-            # --- Validation ---
+            # --- Validation (every epoch) ---
             val_metrics = self._evaluate(self.data.val_mask)
 
             # --- Scheduler ---
@@ -129,7 +144,15 @@ class GNNTrainer:
             self.history["epoch"].append(epoch)
             self.history["train_loss"].append(train_loss)
             self.history["val_auc"].append(val_metrics["auc_roc"])
+            self.history["val_auc_pr"].append(val_metrics["auc_pr"])
             self.history["lr"].append(current_lr)
+
+            # Train metrics sampled periodically (for train-vs-val curves).
+            if epoch % self.log_interval == 0 or epoch == 1:
+                train_metrics = self._evaluate(self.data.train_mask)
+                self.history["train_eval_epoch"].append(epoch)
+                self.history["train_auc"].append(train_metrics["auc_roc"])
+                self.history["train_auc_pr"].append(train_metrics["auc_pr"])
 
             if epoch % self.log_interval == 0 or epoch == 1:
                 logger.info(
@@ -162,6 +185,7 @@ class GNNTrainer:
         # --- Threshold calibration on validation set -----------------------
         self._calibrate_threshold()
 
+        self._save_history()
         return self.history
 
     def evaluate_test(self) -> Dict[str, float]:
@@ -193,17 +217,36 @@ class GNNTrainer:
     # ------------------------------------------------------------------
 
     def _train_epoch(self) -> float:
+        """One full-graph training step, memory-bounded.
+
+        Node embeddings are computed once over the full graph; the edge
+        classifier is then applied to the training edges in mini-batches with
+        gradient accumulation. This is exactly equivalent to a single
+        full-batch step (the gradient of a mean equals the size-weighted mean
+        of the per-chunk gradients) but bounds peak GPU memory to one edge
+        chunk rather than all training edges at once.
+        """
         self.model.train()
         self.optimizer.zero_grad()
 
-        logits = self.model(
-            self.data.x, self.data.edge_index, self.data.edge_attr,
-        )
-        loss = self.criterion(
-            logits[self.data.train_mask],
-            self.data.edge_label[self.data.train_mask],
-        )
-        loss.backward()
+        # Full-graph node embeddings (kept in the autograd graph for backprop).
+        h = self.model.encode(self.data.x, self.data.edge_index)
+
+        train_idx = self.data.train_mask.nonzero(as_tuple=False).squeeze(1)
+        n = int(train_idx.numel())
+        n_chunks = (n + self.edge_batch - 1) // self.edge_batch
+
+        total_loss = 0.0
+        for ci in range(n_chunks):
+            chunk = train_idx[ci * self.edge_batch:(ci + 1) * self.edge_batch]
+            logits = self.model.decode(
+                h, self.data.edge_index, self.data.edge_attr, idx=chunk,
+            )
+            loss = self.criterion(logits, self.data.edge_label[chunk])
+            # Retain the shared encode graph until the final chunk's backward.
+            (loss * (chunk.numel() / n)).backward(
+                retain_graph=(ci < n_chunks - 1))
+            total_loss += loss.item() * chunk.numel()
 
         if self.grad_clip > 0:
             torch.nn.utils.clip_grad_norm_(
@@ -211,29 +254,33 @@ class GNNTrainer:
             )
 
         self.optimizer.step()
-        return loss.item()
+        return total_loss / n
 
     @torch.no_grad()
     def _evaluate(
         self, mask: torch.Tensor, threshold: float = 0.5
     ) -> Dict[str, float]:
         self.model.eval()
-        logits = self.model(
-            self.data.x, self.data.edge_index, self.data.edge_attr,
+        h = self.model.encode(self.data.x, self.data.edge_index)
+        idx = mask.nonzero(as_tuple=False).squeeze(1)
+        logits = self.model.decode(
+            h, self.data.edge_index, self.data.edge_attr, idx=idx,
         )
-        y_prob = torch.sigmoid(logits[mask]).cpu().numpy()
-        y_true = self.data.edge_label[mask].cpu().numpy()
+        y_prob = torch.sigmoid(logits).cpu().numpy()
+        y_true = self.data.edge_label[idx].cpu().numpy()
         return compute_all_metrics(y_true, y_prob, threshold=threshold)
 
     def _get_val_probs(self) -> Tuple[np.ndarray, np.ndarray]:
         """Return (y_true, y_prob) for the validation set."""
         self.model.eval()
         with torch.no_grad():
-            logits = self.model(
-                self.data.x, self.data.edge_index, self.data.edge_attr,
+            h = self.model.encode(self.data.x, self.data.edge_index)
+            idx = self.data.val_mask.nonzero(as_tuple=False).squeeze(1)
+            logits = self.model.decode(
+                h, self.data.edge_index, self.data.edge_attr, idx=idx,
             )
-            y_prob = torch.sigmoid(logits[self.data.val_mask]).cpu().numpy()
-            y_true = self.data.edge_label[self.data.val_mask].cpu().numpy()
+            y_prob = torch.sigmoid(logits).cpu().numpy()
+            y_true = self.data.edge_label[idx].cpu().numpy()
         return y_true, y_prob
 
     def _calibrate_threshold(self) -> None:

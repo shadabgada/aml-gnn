@@ -195,6 +195,13 @@ class TemporalTrainer:
             self.model.load_state_dict(self.best_state)
 
         self._calibrate_threshold()
+        try:
+            import json as _json
+            os.makedirs("results/curves", exist_ok=True)
+            with open(f"results/curves/{model_name}_history.json", "w") as f:
+                _json.dump(self.history, f, indent=2)
+        except Exception as e:
+            logger.warning("Could not save history: %s", e)
         return self.history
 
     def evaluate_test(self) -> Dict[str, float]:

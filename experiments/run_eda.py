@@ -1,396 +1,341 @@
-"""Exploratory Data Analysis for IBM AML HI-Small dataset.
+"""Exploratory Data Analysis for the IBM AML HI-Small dataset.
 
-Produces publication-ready figures characterizing the dataset: class imbalance,
-temporal distribution, degree distributions, transaction amounts, payment patterns,
-and graph structure. All figures saved to temp/eda/ for inspection.
+Rebuilt for the resubmission to empirically characterise the dataset BEFORE any
+model is applied, addressing the requirement to establish that the data exhibits
+the graph structure and temporal dynamics the study relies on.
+
+Covers, using ONLY the transactions and accounts files (no external labels):
+  1. Class balance.
+  2. Graph structure: degree distributions, counterparty spread, hubs,
+     connected components (scipy), sampled clustering coefficient.
+  3. Structure vs laundering: where laundering accounts sit structurally.
+  4. Temporal distribution: transaction volume and laundering prevalence over time.
+  5. Feature distributions: laundering vs legitimate (amount, payment, currency, time).
+  6. Typology signatures detectable in the laundering subgraph: fan-out, fan-in,
+     layering/chains (pass-through accounts), and structuring (small-amount splitting).
+
+Outputs figures to results/eda/*.png and a machine-readable summary to
+results/eda/eda_stats.json for use in the report tables.
+
+Deterministic: fixed seed (42) for all sampling.
+
+Usage:
+    python experiments/run_eda.py --variant HI-Small
 """
 
-import os
+from __future__ import annotations
+
+import argparse
+import json
 import sys
-import logging
 from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
-import seaborn as sns
+import scipy.sparse as sp
+from scipy.sparse.csgraph import connected_components
 
 sys.path.insert(0, ".")
 
 from src.data.loader import load_raw_data
+from src.data.graph_constructor import _parse_timestamp
 from src.utils.config import DataConfig
 
-OUT = Path("temp/eda")
+SEED = 42
+OUT = Path("results/eda")
 OUT.mkdir(parents=True, exist_ok=True)
 
-sns.set_theme(style="whitegrid", context="paper", font_scale=1.1, palette="Set2")
 COLOR_LEGIT = "#4C72B0"
 COLOR_LAUNDER = "#C44E52"
-FIGSIZE_WIDE = (7, 3.5)
-FIGSIZE_SQ = (5, 4)
 DPI = 150
 
+# Thresholds used to *count* typology instances (reported explicitly, not tuned).
+FANOUT_MIN = 3          # a laundering source reaching >= this many distinct dsts
+FANIN_MIN = 3           # a laundering dst reached from >= this many distinct srcs
+STRUCTURING_AMOUNT = 10_000.0   # "small" amount ceiling for structuring
+STRUCTURING_MIN_TX = 3          # >= this many small laundering sends to distinct dsts
 
-def main():
-    # ---- Load --------------------------------------------------------------
-    cfg = DataConfig(dataset_variant="HI-Small")
+stats: dict = {}
+
+
+def savefig(fig, name: str) -> None:
+    fig.tight_layout()
+    fig.savefig(OUT / name, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  saved {name}")
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="EDA for IBM AML")
+    ap.add_argument("--variant", type=str, default="HI-Small")
+    args = ap.parse_args()
+    rng = np.random.default_rng(SEED)
+
+    # ---- Load -------------------------------------------------------------
+    cfg = DataConfig(dataset_variant=args.variant)
     accounts, txn = load_raw_data(cfg)
-
     n_txn = len(txn)
-    n_laundering = txn["is_laundering"].sum()
-    n_accounts = len(accounts)
-    prevalence = n_laundering / n_txn
-    ts_dt_all = pd.to_datetime(txn["timestamp"], errors="coerce")
-    ts_min = ts_dt_all.min()
-    ts_max = ts_dt_all.max()
-    ts_days = (ts_max - ts_min).total_seconds() / 86400 if ts_min is not pd.NaT else 0
+    n_pos = int(txn["is_laundering"].sum())
+    n_acc = len(accounts)
+    prevalence = n_pos / n_txn
 
-    print(f"Accounts: {n_accounts:,}")
-    print(f"Transactions: {n_txn:,}")
-    print(f"Laundering: {n_laundering:,} ({100*prevalence:.4f}%)")
-    print(f"Timestamp range: {ts_min} to {ts_max} ({ts_days:.1f} days)")
+    # Robust timestamp parse (same logic as the pipeline) -> datetime.
+    epoch = _parse_timestamp(txn["timestamp"])          # float64 unix seconds
+    ts = pd.to_datetime(epoch, unit="s")
+    span_days = (epoch.max() - epoch.min()) / 86400.0
 
-    # ---- 1. Class imbalance ------------------------------------------------
-    fig1, (ax1a, ax1b) = plt.subplots(1, 2, figsize=FIGSIZE_WIDE, dpi=DPI)
+    stats["dataset"] = {
+        "accounts": n_acc, "transactions": n_txn, "laundering": n_pos,
+        "prevalence": prevalence, "span_days": round(float(span_days), 2),
+    }
+    print(f"Accounts={n_acc:,} | Transactions={n_txn:,} | "
+          f"Laundering={n_pos:,} ({prevalence:.4%}) | Span={span_days:.1f} days")
 
-    counts = [n_txn - n_laundering, n_laundering]
-    labels = ["Legitimate", "Laundering"]
-    colors = [COLOR_LEGIT, COLOR_LAUNDER]
-    bars = ax1a.bar(labels, counts, color=colors, edgecolor="white", linewidth=0.5)
-    ax1a.set_ylabel("Transactions")
-    ax1a.set_title("Class Distribution")
-    for bar, val in zip(bars, counts):
-        ax1a.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + n_txn * 0.01,
-                  f"{val:,}\n({100*val/n_txn:.2f}%)", ha="center", fontsize=8)
+    is_l = txn["is_laundering"].to_numpy().astype(bool)
 
-    ax1b.pie(counts, labels=labels, colors=colors, autopct="%1.3f%%",
-             startangle=90, explode=(0, 0.1), textprops={"fontsize": 9})
-    ax1b.set_title("Class Proportion")
+    # ---- 1. Class balance -------------------------------------------------
+    fig, ax = plt.subplots(figsize=(5, 3.5), dpi=DPI)
+    counts = [n_txn - n_pos, n_pos]
+    ax.bar(["Legitimate", "Laundering"], counts, color=[COLOR_LEGIT, COLOR_LAUNDER])
+    ax.set_yscale("log")
+    ax.set_ylabel("Transactions (log scale)")
+    ax.set_title(f"Class imbalance (laundering = {prevalence:.3%})")
+    for i, v in enumerate(counts):
+        ax.text(i, v, f"{v:,}", ha="center", va="bottom", fontsize=8)
+    savefig(fig, "01_class_balance.png")
 
-    fig1.suptitle("Figure 1: Class imbalance in IBM AML HI-Small", y=1.02, fontweight="bold")
-    fig1.tight_layout()
-    fig1.savefig(OUT / "01_class_imbalance.png", bbox_inches="tight")
-    plt.close(fig1)
-    print("Saved 01_class_imbalance.png")
-
-    # ---- 2. Temporal distribution ------------------------------------------
-    txn_ts = txn.copy()
-    txn_ts["timestamp_dt"] = pd.to_datetime(txn_ts["timestamp"], unit="s", errors="coerce")
-    txn_ts["hour"] = txn_ts["timestamp_dt"].dt.hour
-    txn_ts["day"] = txn_ts["timestamp_dt"].dt.day
-    txn_ts["dayofweek"] = txn_ts["timestamp_dt"].dt.dayofweek
-
-    fig2, axes2 = plt.subplots(2, 2, figsize=(8, 6), dpi=DPI)
-
-    # 2a: Hourly volume by class
-    for label_val, col, name in [(0, COLOR_LEGIT, "Legitimate"), (1, COLOR_LAUNDER, "Laundering")]:
-        subset = txn_ts[txn_ts["is_laundering"] == label_val]
-        hourly = subset.groupby("hour").size()
-        hourly = hourly.reindex(range(24), fill_value=0)
-        axes2[0, 0].plot(hourly.index, hourly.values, color=col, label=name, linewidth=1.2)
-    axes2[0, 0].set_xlabel("Hour of Day")
-    axes2[0, 0].set_ylabel("Transactions")
-    axes2[0, 0].set_title("Hourly Transaction Volume")
-    axes2[0, 0].legend(fontsize=7)
-
-    # 2b: Daily volume
-    daily = txn_ts.groupby(["day", "is_laundering"]).size().unstack(fill_value=0)
-    axes2[0, 1].bar(daily.index, daily.get(0, 0), color=COLOR_LEGIT, label="Legitimate", width=0.8)
-    axes2[0, 1].bar(daily.index, daily.get(1, 0), color=COLOR_LAUNDER, label="Laundering",
-                    width=0.8, bottom=daily.get(0, 0))
-    axes2[0, 1].set_xlabel("Day (within dataset)")
-    axes2[0, 1].set_ylabel("Transactions")
-    axes2[0, 1].set_title("Daily Volume (stacked)")
-    axes2[0, 1].legend(fontsize=7)
-
-    # 2c: Laundering rate by day
-    daily_rate = (daily.get(1, 0) / daily.sum(axis=1) * 100)
-    axes2[1, 0].bar(daily_rate.index, daily_rate.values, color=COLOR_LAUNDER, width=0.8)
-    axes2[1, 0].axhline(y=prevalence * 100, color="black", linestyle="--", linewidth=0.8,
-                        label=f"Overall ({prevalence*100:.2f}%)")
-    axes2[1, 0].set_xlabel("Day")
-    axes2[1, 0].set_ylabel("Laundering Rate (%)")
-    axes2[1, 0].set_title("Laundering Rate by Day")
-    axes2[1, 0].legend(fontsize=7)
-
-    # 2d: Day of week
-    dow_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-    for label_val, col, name in [(0, COLOR_LEGIT, "Legitimate"), (1, COLOR_LAUNDER, "Laundering")]:
-        subset = txn_ts[txn_ts["is_laundering"] == label_val]
-        dow_counts = subset.groupby("dayofweek").size().reindex(range(7), fill_value=0)
-        axes2[1, 1].bar(np.arange(7) - 0.15 + (0.3 if label_val else 0), dow_counts.values,
-                        width=0.3, color=col, label=name)
-    axes2[1, 1].set_xticks(range(7))
-    axes2[1, 1].set_xticklabels(dow_names, fontsize=8)
-    axes2[1, 1].set_ylabel("Transactions")
-    axes2[1, 1].set_title("Volume by Day of Week")
-    axes2[1, 1].legend(fontsize=7)
-
-    fig2.suptitle("Figure 2: Temporal distribution of transactions", y=1.02, fontweight="bold")
-    fig2.tight_layout()
-    fig2.savefig(OUT / "02_temporal_distribution.png", bbox_inches="tight")
-    plt.close(fig2)
-    print("Saved 02_temporal_distribution.png")
-
-    # ---- 3. Transaction amounts --------------------------------------------
-    fig3, (ax3a, ax3b) = plt.subplots(1, 2, figsize=FIGSIZE_WIDE, dpi=DPI)
-
-    amt_legit = txn.loc[txn["is_laundering"] == 0, "amount"].clip(upper=1e6)
-    amt_launder = txn.loc[txn["is_laundering"] == 1, "amount"].clip(upper=1e6)
-
-    bins = np.logspace(0, 6, 80)
-    ax3a.hist(amt_legit, bins=bins, color=COLOR_LEGIT, alpha=0.6, label="Legitimate", density=True)
-    ax3a.hist(amt_launder, bins=bins, color=COLOR_LAUNDER, alpha=0.7, label="Laundering", density=True)
-    ax3a.set_xscale("log")
-    ax3a.set_xlabel("Amount (log scale)")
-    ax3a.set_ylabel("Density")
-    ax3a.set_title("Amount Distribution (log-log)")
-    ax3a.legend(fontsize=8)
-
-    ax3b.boxplot([amt_legit, amt_launder], tick_labels=["Legitimate", "Laundering"],
-                 patch_artist=True, boxprops={"facecolor": COLOR_LEGIT, "alpha": 0.5},
-                 medianprops={"color": "black"})
-    ax3b.set_ylabel("Amount")
-    ax3b.set_title("Amount by Class")
-
-    amt_legit_med = amt_legit.median()
-    amt_launder_med = amt_launder.median()
-    print(f"Median amount: legitimate={amt_legit_med:,.0f}, laundering={amt_launder_med:,.0f}")
-
-    fig3.suptitle("Figure 3: Transaction amount distributions", y=1.02, fontweight="bold")
-    fig3.tight_layout()
-    fig3.savefig(OUT / "03_amount_distribution.png", bbox_inches="tight")
-    plt.close(fig3)
-    print("Saved 03_amount_distribution.png")
-
-    # ---- 4. Degree distributions -------------------------------------------
+    # ---- Degrees / counterparties (vectorised) ----------------------------
     out_deg = txn.groupby("from_account").size()
     in_deg = txn.groupby("to_account").size()
-
-    laundering_out = txn[txn["is_laundering"] == 1].groupby("from_account").size()
-    laundering_in = txn[txn["is_laundering"] == 1].groupby("to_account").size()
-    laundering_accts = set(laundering_out.index) | set(laundering_in.index)
-
-    fig4, axes4 = plt.subplots(2, 2, figsize=(8, 6), dpi=DPI)
-
-    for ax, deg_series, title in [
-        (axes4[0, 0], out_deg, "Out-degree Distribution"),
-        (axes4[0, 1], in_deg, "In-degree Distribution"),
-    ]:
-        values = deg_series.values
-        ax.hist(np.log10(values + 1), bins=60, color=COLOR_LEGIT, alpha=0.7, density=True)
-        ax.set_xlabel("log10(degree + 1)")
-        ax.set_ylabel("Density")
-        ax.set_title(title)
-
+    out_cp = txn.groupby("from_account")["to_account"].nunique()
+    in_cp = txn.groupby("to_account")["from_account"].nunique()
     total_deg = out_deg.add(in_deg, fill_value=0)
-    all_accts = set(out_deg.index) | set(in_deg.index)
-    legit_deg = [total_deg.get(a, 0) for a in all_accts if a not in laundering_accts]
-    laund_deg = [total_deg.get(a, 0) for a in all_accts if a in laundering_accts]
+    total_cp = out_cp.add(in_cp, fill_value=0)
 
-    axes4[1, 0].hist([np.log10(np.array(legit_deg) + 1), np.log10(np.array(laund_deg) + 1)],
-                     bins=50, color=[COLOR_LEGIT, COLOR_LAUNDER], alpha=0.6,
-                     label=["Legitimate", "Laundering"], density=True)
-    axes4[1, 0].set_xlabel("log10(total degree + 1)")
-    axes4[1, 0].set_ylabel("Density")
-    axes4[1, 0].set_title("Total Degree by Class")
-    axes4[1, 0].legend(fontsize=7)
+    stats["degree"] = {
+        "median_total_degree": float(total_deg.median()),
+        "mean_total_degree": float(total_deg.mean()),
+        "max_total_degree": int(total_deg.max()),
+        "p99_total_degree": float(total_deg.quantile(0.99)),
+        "accounts_1_or_2_counterparties_pct":
+            float((total_cp <= 2).mean() * 100),
+        "accounts_ge_10_counterparties_pct":
+            float((total_cp >= 10).mean() * 100),
+    }
 
-    axes4[1, 1].boxplot([legit_deg, laund_deg], tick_labels=["Legitimate", "Laundering"],
-                        patch_artist=True,
-                        boxprops={"facecolor": COLOR_LEGIT, "alpha": 0.5},
-                        medianprops={"color": "black"})
-    axes4[1, 1].set_ylabel("Total Degree")
-    axes4[1, 1].set_title("Degree by Class (boxplot)")
+    # ---- 2. Graph structure: degree + counterparty spread -----------------
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3.5), dpi=DPI)
+    for series, lab, c in [(out_deg, "out-degree", COLOR_LEGIT),
+                           (in_deg, "in-degree", COLOR_LAUNDER)]:
+        vals, cnts = np.unique(series.to_numpy(), return_counts=True)
+        axes[0].loglog(vals, cnts, ".", markersize=3, label=lab, color=c)
+    axes[0].set_xlabel("degree"); axes[0].set_ylabel("count of accounts")
+    axes[0].set_title("Degree distribution (log-log)"); axes[0].legend(fontsize=8)
 
-    print(f"Median total degree: legit={np.median(legit_deg):.1f}, laundering={np.median(laund_deg):.1f}")
+    cp_vals = total_cp.to_numpy()
+    axes[1].hist(np.clip(cp_vals, 0, 50), bins=50, color=COLOR_LEGIT)
+    axes[1].set_yscale("log")
+    axes[1].set_xlabel("distinct counterparties (clipped at 50)")
+    axes[1].set_ylabel("accounts (log)")
+    axes[1].set_title("Counterparty spread per account")
+    savefig(fig, "02_degree_counterparties.png")
 
-    fig4.suptitle("Figure 4: Account degree distributions", y=1.02, fontweight="bold")
-    fig4.tight_layout()
-    fig4.savefig(OUT / "04_degree_distributions.png", bbox_inches="tight")
-    plt.close(fig4)
-    print("Saved 04_degree_distributions.png")
+    # ---- Connected components (scipy) + sampled clustering ----------------
+    codes_from, uniques = pd.factorize(
+        pd.concat([txn["from_account"], txn["to_account"]], ignore_index=True))
+    N = len(uniques)
+    half = len(txn)
+    u = codes_from[:half]
+    v = codes_from[half:]
+    A = sp.coo_matrix(
+        (np.ones(2 * half, dtype=np.int8),
+         (np.concatenate([u, v]), np.concatenate([v, u]))),
+        shape=(N, N)).tocsr()
+    A.sum_duplicates()
+    A.data[:] = 1  # binarise (collapse multi-edges)
 
-    # ---- 5. Payment format preference --------------------------------------
-    fig5, (ax5a, ax5b) = plt.subplots(1, 2, figsize=FIGSIZE_WIDE, dpi=DPI)
+    n_comp, labels = connected_components(A, directed=False)
+    comp_sizes = np.bincount(labels)
+    giant = int(comp_sizes.max())
 
-    pmt_legit = txn[txn["is_laundering"] == 0]["payment_format"].value_counts()
-    pmt_launder = txn[txn["is_laundering"] == 1]["payment_format"].value_counts()
-
-    pmt_all = pd.DataFrame({"Legitimate": pmt_legit, "Laundering": pmt_launder}).fillna(0)
-    pmt_pct = pmt_all.div(pmt_all.sum(axis=0), axis=1) * 100
-    pmt_pct = pmt_pct.sort_values("Laundering", ascending=False)
-    pmt_pct.plot(kind="barh", ax=ax5a, color=[COLOR_LEGIT, COLOR_LAUNDER], width=0.8)
-    ax5a.set_xlabel("% of Transactions")
-    ax5a.set_title("Payment Format Usage by Class")
-    ax5a.legend(fontsize=7)
-
-    pmt_launder_rate = pmt_all.sum(axis=1)
-    pmt_launder_rate = (pmt_all["Laundering"] / pmt_launder_rate * 100).sort_values(ascending=False)
-    ax5b.barh(pmt_launder_rate.index, pmt_launder_rate.values, color=COLOR_LAUNDER)
-    ax5b.axvline(x=prevalence * 100, color="black", linestyle="--", linewidth=0.8)
-    ax5b.set_xlabel("Laundering Rate (%)")
-    ax5b.set_title("Laundering Rate by Payment Format")
-
-    print("Payment format laundering rates:")
-    for fmt, rate in pmt_launder_rate.head(5).items():
-        print(f"  {fmt}: {rate:.3f}%")
-
-    fig5.suptitle("Figure 5: Payment format analysis", y=1.02, fontweight="bold")
-    fig5.tight_layout()
-    fig5.savefig(OUT / "05_payment_format.png", bbox_inches="tight")
-    plt.close(fig5)
-    print("Saved 05_payment_format.png")
-
-    # ---- 6. Graph structure: component analysis ----------------------------
-    from collections import defaultdict
-
-    edges = list(zip(txn["from_account"], txn["to_account"]))
-    node_to_idx = {}
-    idx_to_node = []
-    for u, v in edges:
-        for node in (u, v):
-            if node not in node_to_idx:
-                node_to_idx[node] = len(idx_to_node)
-                idx_to_node.append(node)
-    n_nodes = len(idx_to_node)
-    print(f"Graph nodes (accounts with >=1 transaction): {n_nodes:,}")
-
-    adj = defaultdict(set)
-    for u, v in edges:
-        ui, vi = node_to_idx[u], node_to_idx[v]
-        adj[ui].add(vi)
-        adj[vi].add(ui)
-
-    visited = set()
-    comp_sizes = []
-    for node in range(n_nodes):
-        if node in visited:
+    # Standard average local clustering coefficient, estimated over a uniform
+    # random sample of ALL nodes (degree < 2 contributes 0, per convention).
+    # For hub nodes clustering is estimated from a random subset of neighbours
+    # to bound cost (an unbiased estimator of the node's local clustering).
+    indptr, indices = A.indptr, A.indices
+    samp = rng.choice(N, size=int(min(5000, N)), replace=False)
+    cc = []
+    for node in samp:
+        nbrs = indices[indptr[node]:indptr[node + 1]]
+        k = len(nbrs)
+        if k < 2:
+            cc.append(0.0)
             continue
-        stack = [node]
-        visited.add(node)
-        size = 0
-        while stack:
-            cur = stack.pop()
-            size += 1
-            for nb in adj[cur]:
-                if nb not in visited:
-                    visited.add(nb)
-                    stack.append(nb)
-        comp_sizes.append(size)
+        if k > 200:
+            nbrs = rng.choice(nbrs, size=200, replace=False)
+            k = 200
+        links = 0
+        for a in nbrs:
+            a_nbrs = indices[indptr[a]:indptr[a + 1]]
+            links += int(np.isin(a_nbrs, nbrs).sum())
+        cc.append(links / (k * (k - 1)))
+    avg_clustering = float(np.mean(cc))
 
-    comp_sizes.sort(reverse=True)
-    print(f"Connected components: {len(comp_sizes)}")
-    print(f"Giant component: {comp_sizes[0]:,} nodes ({100*comp_sizes[0]/n_nodes:.1f}%)")
+    stats["structure"] = {
+        "graph_nodes": int(N),
+        "connected_components": int(n_comp),
+        "giant_component_nodes": giant,
+        "giant_component_pct": round(100 * giant / N, 2),
+        "avg_clustering_sampled": round(avg_clustering, 4),
+        "clustering_sample_size": int(len(samp)),
+    }
+    print(f"  components={n_comp:,} | giant={giant:,} "
+          f"({100*giant/N:.1f}%) | clustering~{avg_clustering:.4f}")
 
-    fig6, (ax6a, ax6b) = plt.subplots(1, 2, figsize=FIGSIZE_WIDE, dpi=DPI)
+    fig, ax = plt.subplots(figsize=(5, 3.5), dpi=DPI)
+    sizes_sorted = np.sort(comp_sizes)[::-1]
+    ax.loglog(np.arange(1, len(sizes_sorted) + 1), sizes_sorted, ".",
+              markersize=3, color=COLOR_LEGIT)
+    ax.set_xlabel("component rank"); ax.set_ylabel("component size")
+    ax.set_title(f"Connected components (giant = {100*giant/N:.1f}% of nodes)")
+    savefig(fig, "03_components.png")
 
-    ax6a.loglog(range(1, len(comp_sizes) + 1), comp_sizes, marker=".", markersize=2,
-                linewidth=0.8, color=COLOR_LEGIT)
-    ax6a.set_xlabel("Component Rank")
-    ax6a.set_ylabel("Component Size")
-    ax6a.set_title("Component Size Distribution")
+    # ---- 3. Structure vs laundering ---------------------------------------
+    l_txn = txn[is_l]
+    l_accts = pd.Index(pd.unique(
+        pd.concat([l_txn["from_account"], l_txn["to_account"]], ignore_index=True)))
+    is_l_acct = total_deg.index.isin(l_accts)
+    deg_l = total_deg[is_l_acct].to_numpy()
+    deg_n = total_deg[~is_l_acct].to_numpy()
+    cp_l = total_cp[is_l_acct].to_numpy()
+    cp_n = total_cp[~is_l_acct].to_numpy()
 
-    cumsum = np.cumsum(comp_sizes) / n_nodes * 100
-    ax6b.plot(range(1, len(cumsum) + 1), cumsum, color=COLOR_LEGIT, linewidth=1.2)
-    ax6b.axhline(y=100, color="black", linestyle="--", linewidth=0.5)
-    ax6b.set_xlabel("Number of Components")
-    ax6b.set_ylabel("Cumulative Coverage (%)")
-    ax6b.set_title("Cumulative Node Coverage by Components")
+    stats["structure_vs_laundering"] = {
+        "n_laundering_accounts": int(len(l_accts)),
+        "median_degree_laundering": float(np.median(deg_l)),
+        "median_degree_normal": float(np.median(deg_n)),
+        "median_counterparties_laundering": float(np.median(cp_l)),
+        "median_counterparties_normal": float(np.median(cp_n)),
+    }
 
-    fig6.suptitle("Figure 6: Graph connectivity structure", y=1.02, fontweight="bold")
-    fig6.tight_layout()
-    fig6.savefig(OUT / "06_graph_connectivity.png", bbox_inches="tight")
-    plt.close(fig6)
-    print("Saved 06_graph_connectivity.png")
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3.5), dpi=DPI)
+    axes[0].boxplot([np.log10(deg_n + 1), np.log10(deg_l + 1)],
+                    tick_labels=["Normal", "Laundering"], showfliers=False)
+    axes[0].set_ylabel("log10(total degree + 1)")
+    axes[0].set_title("Degree: laundering vs normal accounts")
+    axes[1].boxplot([np.log10(cp_n + 1), np.log10(cp_l + 1)],
+                    tick_labels=["Normal", "Laundering"], showfliers=False)
+    axes[1].set_ylabel("log10(counterparties + 1)")
+    axes[1].set_title("Counterparties: laundering vs normal")
+    savefig(fig, "04_structure_vs_laundering.png")
 
-    # ---- 7. Laundering edge patterns: fan-in / fan-out ---------------------
-    fig7, (ax7a, ax7b) = plt.subplots(1, 2, figsize=FIGSIZE_WIDE, dpi=DPI)
+    # ---- 4. Temporal distribution -----------------------------------------
+    day = ((epoch - epoch.min()) // 86400).astype(int)
+    df_t = pd.DataFrame({"day": day, "is_l": is_l})
+    vol = df_t.groupby("day").size()
+    rate = df_t.groupby("day")["is_l"].mean() * 100
 
-    laundering_txn = txn[txn["is_laundering"] == 1]
-    src_laundering = laundering_txn.groupby("from_account").size()
-    dst_laundering = laundering_txn.groupby("to_account").size()
+    stats["temporal"] = {
+        "laundering_rate_first_day_pct": float(rate.iloc[0]),
+        "laundering_rate_last_day_pct": float(rate.iloc[-1]),
+        "peak_day_rate_pct": float(rate.max()),
+    }
 
-    ax7a.hist(src_laundering.values, bins=50, color=COLOR_LAUNDER, alpha=0.7, density=True)
-    ax7a.set_xlabel("Laundering Transactions Sent")
-    ax7a.set_ylabel("Density")
-    ax7a.set_title("Laundering Fan-out per Account")
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3.5), dpi=DPI)
+    axes[0].bar(vol.index, vol.values, color=COLOR_LEGIT)
+    axes[0].set_xlabel("day"); axes[0].set_ylabel("transactions")
+    axes[0].set_title("Transaction volume over time")
+    axes[1].plot(rate.index, rate.values, marker="o", color=COLOR_LAUNDER)
+    axes[1].axhline(prevalence * 100, ls="--", c="black", lw=0.8,
+                    label=f"overall {prevalence*100:.2f}%")
+    axes[1].set_xlabel("day"); axes[1].set_ylabel("laundering rate (%)")
+    axes[1].set_title("Laundering prevalence over time"); axes[1].legend(fontsize=8)
+    savefig(fig, "05_temporal.png")
 
-    ax7b.hist(dst_laundering.values, bins=50, color=COLOR_LAUNDER, alpha=0.7, density=True)
-    ax7b.set_xlabel("Laundering Transactions Received")
-    ax7b.set_ylabel("Density")
-    ax7b.set_title("Laundering Fan-in per Account")
+    # ---- 5. Feature distributions: laundering vs legitimate ----------------
+    amt = txn["amount"].to_numpy(dtype=np.float64)
+    amt_l = np.clip(amt[is_l], 1, None)
+    amt_n = np.clip(amt[~is_l], 1, None)
+    stats["amount"] = {
+        "median_laundering": float(np.median(amt_l)),
+        "median_legit": float(np.median(amt_n)),
+    }
 
-    print(f"Max laundering fan-out: {src_laundering.max()}")
-    print(f"Max laundering fan-in: {dst_laundering.max()}")
+    pmt = pd.crosstab(txn["payment_format"], is_l, normalize="index")
+    if True in pmt.columns:
+        pmt_rate = (pmt[True] * 100).sort_values(ascending=False)
+    else:
+        pmt_rate = pd.Series(dtype=float)
+    stats["payment_format_laundering_rate_pct"] = {
+        str(k): round(float(v), 4) for k, v in pmt_rate.items()}
 
-    fig7.suptitle("Figure 7: Laundering transaction patterns per account", y=1.02, fontweight="bold")
-    fig7.tight_layout()
-    fig7.savefig(OUT / "07_laundering_patterns.png", bbox_inches="tight")
-    plt.close(fig7)
-    print("Saved 07_laundering_patterns.png")
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3.5), dpi=DPI)
+    bins = np.logspace(0, 7, 60)
+    axes[0].hist(amt_n, bins=bins, density=True, alpha=0.6,
+                 color=COLOR_LEGIT, label="Legitimate")
+    axes[0].hist(amt_l, bins=bins, density=True, alpha=0.7,
+                 color=COLOR_LAUNDER, label="Laundering")
+    axes[0].set_xscale("log")
+    axes[0].set_xlabel("amount (log)"); axes[0].set_ylabel("density")
+    axes[0].set_title("Amount by class"); axes[0].legend(fontsize=8)
+    if not pmt_rate.empty:
+        axes[1].barh(pmt_rate.index[::-1], pmt_rate.values[::-1], color=COLOR_LAUNDER)
+        axes[1].axvline(prevalence * 100, ls="--", c="black", lw=0.8)
+        axes[1].set_xlabel("laundering rate (%)")
+        axes[1].set_title("Laundering rate by payment format")
+    savefig(fig, "06_feature_distributions.png")
 
-    # ---- 8. Entity type analysis -------------------------------------------
-    if "entity_name" in accounts.columns:
-        accounts["entity_type"] = accounts["entity_name"].apply(
-            lambda x: str(x).split("#")[0].strip() if isinstance(x, str) and "#" in x else (
-                str(x)[:30] if isinstance(x, str) else "Unknown"
-            )
-        )
+    # ---- 6. Typology signatures in the laundering subgraph ----------------
+    l_out_cp = l_txn.groupby("from_account")["to_account"].nunique()
+    l_in_cp = l_txn.groupby("to_account")["from_account"].nunique()
+    l_senders = set(l_txn["from_account"])
+    l_receivers = set(l_txn["to_account"])
+    passthrough = l_senders & l_receivers   # receive laundering AND send it on -> layering
 
-        acct_to_type = accounts.set_index("account_id")["entity_type"].to_dict()
-        txn["src_type"] = txn["from_account"].map(acct_to_type).fillna("Orphan")
-        txn["dst_type"] = txn["to_account"].map(acct_to_type).fillna("Orphan")
+    small = l_txn[l_txn["amount"] <= STRUCTURING_AMOUNT]
+    small_cp = small.groupby("from_account")["to_account"].nunique()
 
-        entity_counts = accounts["entity_type"].value_counts()
-        print(f"Entity types: {len(entity_counts)} unique")
-        print(entity_counts.head(10).to_string())
+    stats["typologies"] = {
+        "fanout_accounts": int((l_out_cp >= FANOUT_MIN).sum()),
+        "fanout_threshold": FANOUT_MIN,
+        "max_fanout": int(l_out_cp.max()) if len(l_out_cp) else 0,
+        "fanin_accounts": int((l_in_cp >= FANIN_MIN).sum()),
+        "fanin_threshold": FANIN_MIN,
+        "max_fanin": int(l_in_cp.max()) if len(l_in_cp) else 0,
+        "layering_passthrough_accounts": int(len(passthrough)),
+        "structuring_accounts": int((small_cp >= STRUCTURING_MIN_TX).sum()),
+        "structuring_amount_ceiling": STRUCTURING_AMOUNT,
+    }
+    print("  typologies:", stats["typologies"])
 
-        fig8, (ax8a, ax8b) = plt.subplots(1, 2, figsize=FIGSIZE_WIDE, dpi=DPI)
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3.5), dpi=DPI)
+    axes[0].hist(np.clip(l_out_cp.to_numpy(), 0, 30), bins=30,
+                 color=COLOR_LAUNDER, alpha=0.8, label="fan-out")
+    axes[0].hist(np.clip(l_in_cp.to_numpy(), 0, 30), bins=30,
+                 color=COLOR_LEGIT, alpha=0.6, label="fan-in")
+    axes[0].set_yscale("log")
+    axes[0].set_xlabel("distinct laundering counterparties")
+    axes[0].set_ylabel("accounts (log)")
+    axes[0].set_title("Fan-out / fan-in in laundering subgraph")
+    axes[0].legend(fontsize=8)
+    ty = stats["typologies"]
+    labels = ["fan-out", "fan-in", "layering\n(pass-through)", "structuring"]
+    vals = [ty["fanout_accounts"], ty["fanin_accounts"],
+            ty["layering_passthrough_accounts"], ty["structuring_accounts"]]
+    axes[1].bar(labels, vals, color=COLOR_LAUNDER)
+    axes[1].set_ylabel("accounts")
+    axes[1].set_title("Detected typology signatures")
+    for i, vv in enumerate(vals):
+        axes[1].text(i, vv, f"{vv:,}", ha="center", va="bottom", fontsize=8)
+    savefig(fig, "07_typologies.png")
 
-        top_entities = entity_counts.head(8).index
-        entity_launder_rates = {}
-        for etype in top_entities:
-            etype_accts = set(accounts[accounts["entity_type"] == etype]["account_id"])
-            etype_txn = txn[(txn["from_account"].isin(etype_accts)) |
-                            (txn["to_account"].isin(etype_accts))]
-            if len(etype_txn) > 0:
-                entity_launder_rates[etype] = etype_txn["is_laundering"].mean() * 100
-
-        et_df = pd.Series(entity_launder_rates).sort_values(ascending=False)
-        ax8a.barh(et_df.index, et_df.values, color=COLOR_LAUNDER)
-        ax8a.axvline(x=prevalence * 100, color="black", linestyle="--", linewidth=0.8)
-        ax8a.set_xlabel("Laundering Rate (%)")
-        ax8a.set_title("Laundering Rate by Entity Type (top 8)")
-
-        top_counts = entity_counts.head(8)
-        ax8b.barh(top_counts.index, top_counts.values, color=COLOR_LEGIT)
-        ax8b.set_xlabel("Number of Accounts")
-        ax8b.set_title("Account Count by Entity Type (top 8)")
-
-        fig8.suptitle("Figure 8: Entity type analysis", y=1.02, fontweight="bold")
-        fig8.tight_layout()
-        fig8.savefig(OUT / "08_entity_types.png", bbox_inches="tight")
-        plt.close(fig8)
-        print("Saved 08_entity_types.png")
-
-    # ---- Summary statistics -------------------------------------------------
-    print("\n" + "=" * 60)
-    print("EDA SUMMARY")
-    print("=" * 60)
-    print(f"Accounts: {n_accounts:,} (nodes)")
-    print(f"Transactions: {n_txn:,} (edges)")
-    print(f"Laundering prevalence: {prevalence:.4%}")
-    print(f"Timestamp span: {ts_days:.1f} days")
-    print(f"Connected components: {len(comp_sizes)}")
-    print(f"Giant component coverage: {comp_sizes[0]/n_nodes:.1%}")
-    print(f"Median degree (all): {np.median(total_deg.values):.1f}")
-    print(f"Median degree (laundering): {np.median(laund_deg):.1f}")
-    print(f"Median amount: {amt_legit_med:,.0f} (legit) vs {amt_launder_med:,.0f} (launder)")
-    print(f"Figures saved to: {OUT.resolve()}")
+    # ---- Persist stats ----------------------------------------------------
+    (OUT / "eda_stats.json").write_text(json.dumps(stats, indent=2))
+    print(f"\nStats written to {OUT/'eda_stats.json'}")
+    print(f"Figures in {OUT.resolve()}")
 
 
 if __name__ == "__main__":

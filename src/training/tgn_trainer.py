@@ -103,7 +103,7 @@ class TGNTrainer:
 
         # History ------------------------------------------------------------
         self.history: Dict[str, list] = {
-            "epoch": [], "train_loss": [], "val_auc": [], "lr": [],
+            "epoch": [], "train_loss": [], "val_auc": [], "val_auc_pr": [], "lr": [],
         }
 
         # Edge ranges for train/val/test ------------------------------------
@@ -118,6 +118,13 @@ class TGNTrainer:
             len(self.data.y) - val_end_idx,
             batch_size,
         )
+
+    def _save_history(self) -> None:
+        """Persist per-epoch history for learning-curve plots."""
+        import json as _json
+        os.makedirs("results/curves", exist_ok=True)
+        with open(f"results/curves/{self.model.__class__.__name__}_history.json", "w") as f:
+            _json.dump(self.history, f, indent=2)
 
     # ------------------------------------------------------------------
     # Public API
@@ -143,6 +150,7 @@ class TGNTrainer:
             self.history["epoch"].append(epoch)
             self.history["train_loss"].append(train_loss)
             self.history["val_auc"].append(val_auc)
+            self.history["val_auc_pr"].append(val_metrics.get("auc_pr", 0.0))
             self.history["lr"].append(current_lr)
 
             if epoch % self.log_interval == 0 or epoch == 1:
@@ -176,6 +184,7 @@ class TGNTrainer:
             self.model.load_state_dict(self.best_state)
 
         self._calibrate_threshold()
+        self._save_history()
         return self.history
 
     def evaluate_test(self) -> Dict[str, float]:
@@ -187,16 +196,97 @@ class TGNTrainer:
         )
 
     def evaluate_per_time_slice(self, num_slices: int = 12) -> list[Dict]:
-        """Evaluate on equal-sized time slices for trend analysis."""
+        """COLD per-slice eval: memory is reset at the start of each slice.
+
+        Retained for the warm-vs-cold comparison. Because memory does not carry
+        across slices, any across-slice trend here reflects only within-slice
+        accumulation and the changing laundering prevalence, not accumulated
+        history from the training period.
+        """
         test_start, test_end = self.test_edges
         n_test = test_end - test_start
         slice_size = n_test // num_slices
         results = []
         for i in range(num_slices):
             lo = test_start + i * slice_size
-            hi = min(test_start + (i + 1) * slice_size, test_end)
+            hi = test_end if i == num_slices - 1 else min(
+                test_start + (i + 1) * slice_size, test_end)
             m = self._evaluate_split((lo, hi), threshold=0.5)
             m["slice_idx"] = i
+            m["prevalence"] = float(self.data.y[lo:hi].float().mean().item())
+            results.append(m)
+        return results
+
+    @torch.no_grad()
+    def _warmup_memory(self) -> None:
+        """Replay all train+val edges chronologically to build memory state.
+
+        Only memory is advanced (no predictions). After this call, node memory
+        reflects the entire training and validation history, so the test set is
+        scored as it would be in deployment: with memory carried forward from
+        all prior interactions rather than cold-started.
+        """
+        self.model.eval()
+        self.model.reset_memory()
+        end = self.val_edges[1]  # exclusive end of val == start of test
+        for lo in range(0, end, self.batch_size):
+            hi = min(lo + self.batch_size, end)
+            if hi <= lo:
+                continue
+            src, dst, t, msg, _ = self._slice(lo, hi)
+            self.model.memory.update_and_embed(src, dst, t, msg)
+
+    @torch.no_grad()
+    def evaluate_test_warm(self, threshold: float = 0.5) -> Dict[str, float]:
+        """Overall test eval with memory warm-started from train+val and carried
+        continuously across the test set. Leakage-free: each edge is scored with
+        memory from BEFORE it (update_memory=False), then memory is advanced."""
+        self._warmup_memory()
+        probs, labels = [], []
+        start, end = self.test_edges
+        for lo in range(start, end, self.batch_size):
+            hi = min(lo + self.batch_size, end)
+            if hi <= lo:
+                continue
+            src, dst, t, msg, y = self._slice(lo, hi)
+            logits = self.model.compute_edge_logits(
+                src, dst, t, msg, update_memory=False)
+            probs.append(torch.sigmoid(logits).cpu().numpy())
+            labels.append(y.cpu().numpy())
+            self.model.memory.update_and_embed(src, dst, t, msg)
+        y_prob = np.concatenate(probs)
+        y_true = np.concatenate(labels)
+        return compute_all_metrics(y_true, y_prob, threshold=threshold)
+
+    @torch.no_grad()
+    def evaluate_per_time_slice_warm(self, num_slices: int = 12) -> list[Dict]:
+        """WARM per-slice eval: memory warm-started from train+val, then carried
+        continuously across all test slices. This isolates the effect of
+        accumulated per-node history. Each slice also reports its laundering
+        prevalence so the trend can be read against the class-balance shift."""
+        self._warmup_memory()
+        test_start, test_end = self.test_edges
+        n_test = test_end - test_start
+        slice_size = n_test // num_slices
+        results = []
+        for i in range(num_slices):
+            lo = test_start + i * slice_size
+            hi = test_end if i == num_slices - 1 else min(
+                test_start + (i + 1) * slice_size, test_end)
+            probs, labels = [], []
+            for b in range(lo, hi, self.batch_size):
+                bhi = min(b + self.batch_size, hi)
+                src, dst, t, msg, y = self._slice(b, bhi)
+                logits = self.model.compute_edge_logits(
+                    src, dst, t, msg, update_memory=False)
+                probs.append(torch.sigmoid(logits).cpu().numpy())
+                labels.append(y.cpu().numpy())
+                self.model.memory.update_and_embed(src, dst, t, msg)
+            y_prob = np.concatenate(probs)
+            y_true = np.concatenate(labels)
+            m = compute_all_metrics(y_true, y_prob, threshold=0.5)
+            m["slice_idx"] = i
+            m["prevalence"] = float(y_true.mean())
             results.append(m)
         return results
 

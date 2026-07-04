@@ -95,38 +95,50 @@ class GATEdgeClassifier(nn.Module):
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
 
-    def forward(
-        self,
-        x: torch.Tensor,
-        edge_index: torch.Tensor,
-        edge_attr: torch.Tensor,
-        chunk_size: int = 500_000,
-    ) -> torch.Tensor:
-        """Return edge logits for all edges, computed in chunks to limit memory."""
+    def encode(self, x: torch.Tensor, edge_index: torch.Tensor) -> torch.Tensor:
+        """Compute node embeddings via attention convolution over the full graph."""
         h = x
         for i in range(self.num_layers):
             h = self.convs[i](h, edge_index)
             h = self.bns[i](h)
             h = self.act(h)
             h = self.dropout(h)
+        return h
 
+    def decode(
+        self,
+        h: torch.Tensor,
+        edge_index: torch.Tensor,
+        edge_attr: torch.Tensor,
+        idx: torch.Tensor | None = None,
+        chunk_size: int = 500_000,
+    ) -> torch.Tensor:
+        """Score edges from node embeddings.
+
+        If idx is given, only those edges are scored (memory-bounded mini-batch
+        training). Otherwise all edges are scored, chunked to limit memory.
+        """
         src, dst = edge_index[0], edge_index[1]
+        if idx is not None:
+            e_in = torch.cat([h[src[idx]], h[dst[idx]], edge_attr[idx]], dim=-1)
+            return self.edge_head(e_in).squeeze(-1)
         num_edges = edge_index.shape[1]
-
         if num_edges <= chunk_size:
-            h_src = h[src]
-            h_dst = h[dst]
-            edge_input = torch.cat([h_src, h_dst, edge_attr], dim=-1)
-            return self.edge_head(edge_input).squeeze(-1)
-
-        # Chunked to avoid OOM on large graphs
-        logits_list = []
+            e_in = torch.cat([h[src], h[dst], edge_attr], dim=-1)
+            return self.edge_head(e_in).squeeze(-1)
+        out = []
         for start in range(0, num_edges, chunk_size):
             end = min(start + chunk_size, num_edges)
-            idx = torch.arange(start, end, device=x.device)
-            e_in = torch.cat([
-                h[src[idx]], h[dst[idx]], edge_attr[idx],
-            ], dim=-1)
-            logits_list.append(self.edge_head(e_in).squeeze(-1))
+            sl = slice(start, end)
+            e_in = torch.cat([h[src[sl]], h[dst[sl]], edge_attr[sl]], dim=-1)
+            out.append(self.edge_head(e_in).squeeze(-1))
+        return torch.cat(out, dim=0)
 
-        return torch.cat(logits_list, dim=0)
+    def forward(
+        self,
+        x: torch.Tensor,
+        edge_index: torch.Tensor,
+        edge_attr: torch.Tensor,
+    ) -> torch.Tensor:
+        """Return edge logits for all edges (encode then decode)."""
+        return self.decode(self.encode(x, edge_index), edge_index, edge_attr)

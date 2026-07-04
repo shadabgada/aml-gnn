@@ -124,24 +124,32 @@ def main():
     logger.info("  Calibrated threshold (%.4f): %s",
                  trainer.calibrated_threshold, format_metrics(test_cal, "test_"))
 
-    # Per-time-slice evaluation
-    per_slice = trainer.evaluate_per_time_slice(num_slices=12)
-    logger.info("\n  Per-time-slice performance (threshold=0.5):")
-    logger.info("  %6s  %8s  %8s  %8s  %8s",
-                 "Slice", "AUC-ROC", "AUC-PR", "Prec", "Rec")
-    for sm in per_slice:
-        logger.info(
-            "  %6d  %8.4f  %8.4f  %8.4f  %8.4f",
-            sm["slice_idx"],
-            sm.get("auc_roc", 0),
-            sm.get("auc_pr", 0),
-            sm.get("precision", 0),
-            sm.get("recall", 0),
-        )
+    # Warm overall test eval: memory warm-started from train+val, carried
+    # continuously across the test set (deployment-realistic, leakage-free).
+    test_warm = trainer.evaluate_test_warm(threshold=0.5)
+    logger.info("  Warm-memory test (0.50):   %s", format_metrics(test_warm, "test_warm_"))
+
+    # Per-time-slice: COLD (reset per slice) vs WARM (memory carried), each with
+    # per-slice laundering prevalence to disentangle memory effect from class shift.
+    per_slice_cold = trainer.evaluate_per_time_slice(num_slices=12)
+    per_slice_warm = trainer.evaluate_per_time_slice_warm(num_slices=12)
+    logger.info("\n  Per-time-slice AUC-PR (cold vs warm) with prevalence:")
+    logger.info("  %6s  %10s  %10s  %10s", "Slice", "Prevalence", "AUC-PR_cold", "AUC-PR_warm")
+    for c, w in zip(per_slice_cold, per_slice_warm):
+        logger.info("  %6d  %10.5f  %10.4f  %10.4f",
+                    c["slice_idx"], w["prevalence"], c["auc_pr"], w["auc_pr"])
+
+    # Persist for the report.
+    import json as _json
+    os.makedirs("results/curves", exist_ok=True)
+    with open("results/curves/tgn_per_slice.json", "w") as f:
+        _json.dump({"cold": per_slice_cold, "warm": per_slice_warm,
+                    "test_default": test_default, "test_calibrated": test_cal,
+                    "test_warm": test_warm}, f, indent=2)
 
     logger.info(
-        "\nTGN Summary: AUC-ROC=%.4f AUC-PR=%.4f (calibrated threshold=%.4f)",
-        test_cal["auc_roc"], test_cal["auc_pr"],
+        "\nTGN Summary: cold AUC-PR=%.4f | warm AUC-PR=%.4f | AUC-ROC(cold)=%.4f (cal thr=%.4f)",
+        test_cal["auc_pr"], test_warm["auc_pr"], test_cal["auc_roc"],
         trainer.calibrated_threshold,
     )
 

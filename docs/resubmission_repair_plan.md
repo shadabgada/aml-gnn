@@ -185,6 +185,13 @@ Re-run/mechanical (D, F, H) is a large share → consistent with "minor repairs.
 - Commits: `4d98398` (wording), `fdcce34` (six-run), `5c51301` (learning curves). Combined draft re-synced from chapter files via `scratchpad/resync_all.py` (Ch3/4/5/appendix blocks).
 - **NEXT: E (explainability)** — Ch4 effectiveness-limitation para + §5.3 recommendation (FATF-2021) + §5.4 limitation + §5.5 future direction + optional permutation-importance demo. Then F, I, H, and the 2.2 secondary asks.
 
+## 2026-07-05 (later) — E COMPLETE (incl. demo) + page-cut done
+
+- **Workstream E fully complete.** Thread now spans: Ch2 §2.3.3 (lit) -> Ch4 §4.8 (interpretability limitation + post-hoc attribution demo) -> Ch5 §5.3.5 (recommendation, cites the demo) + §5.4 limitation + §5.5 future direction + §5.1.4 SQ4. Refs (FATF 2021, Ying, Lundberg, Sundararajan) already present.
+- **Permutation-importance demo DONE.** `experiments/run_permutation_importance.py` (committed ac37da1) run by user on Mac (GCN 100 epochs, repeats=5, baseline test AUC-PR 0.2018). Result is coherent and higher-band: top feature **pmt_ACH** (AUC-PR drop 0.175 of 0.202 baseline — confirms EDA's ACH channel); amount + day-of-week next; top NODE features are structural (degree_out 0.048, degree_in 0.025, counterparties) -> closes loop with ablation (those relational features are useless as flat XGBoost inputs, 0.019, but the GCN uses them via message passing). Mac lacked matplotlib so figure was regenerated on Windows from the log values -> `results/curves/permutation_importance.png` = **Figure F.2** (Appendix F, edge=blue/node=orange). Note: Ctrl+T on macOS = SIGINFO (status print), does NOT kill the process.
+- **Page-cut pass DONE** (commit f9dd6e0): removed the 3 triple-redundant per-tier tables (baselines/static/snapshot; kept in leaderboard + Appendix D), kept analysis tables inline, renumbered Ch4 tables to 4.1-4.7, fixed all cross-refs + stale "GAT pending" caption. Body table rows 71->57 (~0.5-0.7 page). Est. body ~38 pages; room for remaining additions; confirm only in Word render (backup levers: move EDA table to App G, or trim prose).
+- **Remaining for higher band:** 2.2 secondary (critical evaluation of key works + why class imbalance hurts message-passing), **F** (scalability run+writeup — REQUIRED for 2.5, compute), **I** (conclusions depth + typology interpretation), **H** (docstrings). Commits this session: 4d98398, fdcce34, 5c51301, 40ef131, 9eeee3d, ac37da1, f9dd6e0, 3464c6f (all pushed to master).
+
 ## Pre-execution checks — RESOLVED (2026-07-01)
 
 - [x] **Code audited** — root `src/` + `experiments/`; findings in "Code audit" section above.

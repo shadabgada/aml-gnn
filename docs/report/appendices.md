@@ -205,7 +205,7 @@ The following examples illustrate the types of prompts used with generative AI t
 
 **Appendix D: Full Results Tables**
 
-This appendix reproduces the complete results from Chapter 4 for reference. All results use the uniform chronological split.
+This appendix provides the complete per-tier results tables referenced from Chapter 4, including the full precision, recall, and threshold detail summarised there. All results use the uniform chronological split.
 
 **Table D.1: Conventional ML baseline results (chronological split, threshold 0.50).**
 

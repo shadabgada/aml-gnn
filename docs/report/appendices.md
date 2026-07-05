@@ -282,7 +282,7 @@ This appendix presents the hyperparameter configurations used for all neural net
 | --- | --- | --- | --- |
 | Gradient clipping enabled | ~0.85-0.89 | minority class not learned; val AUC-PR at the prevalence floor | No |
 | Clipping disabled, larger memory (~119K params) | 0.946 | learns the minority class | No (more parameters, no validation gain) |
-| Clipping disabled, compact memory 64/8 (85,905 params) | 0.946 | learns the minority class | Yes (final) |
+| Clipping disabled, compact memory (dim 64, time 8; 85,905 params) | 0.946 | learns the minority class | Yes (final) |
 
 ---
 

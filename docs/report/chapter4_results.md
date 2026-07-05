@@ -4,7 +4,7 @@ This chapter presents the empirical results of the study. It opens with an explo
 
 **4.1 Exploratory Data Analysis and Dataset Characterisation**
 
-Before any model is applied, the dataset is characterised empirically to establish that it exhibits the relational and temporal structure this study relies on. All analyses use only the transactions and accounts files; the supporting figures are provided in Appendix G (Figures G.1 to G.7), and the statistics are produced deterministically by the EDA script (seed 42). Table 4.1 collects the headline figures. The dataset is severely imbalanced, laundering comprising just 0.102% of transactions (Figure G.1).
+Before any model is applied, the dataset is characterised empirically to establish that it exhibits the relational and temporal structure this study relies on. The analyses use the transactions and accounts files; the supporting figures are provided in Appendix G (Figures G.1 to G.7), and the statistics are produced deterministically by the EDA script (seed 42). Table 4.1 collects the headline figures. The dataset is severely imbalanced, laundering comprising just 0.102% of transactions (Figure G.1).
 
 **Table 4.1: Dataset characterisation summary (HI-Small).**
 
@@ -64,7 +64,7 @@ GCN is the strongest static GNN, achieving AUC-ROC 0.9708 and AUC-PR 0.2056 with
 
 GraphSAGE achieves the lowest static GNN performance (AUC-ROC 0.9452, AUC-PR 0.0412), below the XGBoost baseline on AUC-PR. Mean aggregation with neighbourhood sampling, while computationally efficient, appears to lose discriminative signal. In a graph where laundering accounts are structurally distinctive (high degree, unusual counterparty patterns, Section 4.1), averaging neighbour features may dilute the very signal the model needs to detect. Max or LSTM aggregation might preserve more of this signal at increased computational cost.
 
-GAT reaches AUC-ROC 0.9575 but an AUC-PR of only 0.0912, below both GCN and the XGBoost baseline (0.1460), though above GraphSAGE. It is evaluated with single-head attention: multi-head attention over the full five-million-edge graph exceeds available memory, and the single-head form has correspondingly limited capacity to learn multiple relational patterns in parallel, which the original GAT formulation identifies as important (Velickovic et al., 2018). That a memory-bounded single-head GAT underperforms the simpler spectral convolution of GCN is consistent with the view that, at this graph scale, the cost of dense attention is not repaid by a commensurate gain in detection quality. The memory behaviour of attention on large graphs is discussed further in Section 5.4.
+GAT reaches AUC-ROC 0.9575 but an AUC-PR of only 0.0912, below both GCN and the XGBoost baseline (0.1460), though above GraphSAGE. It is evaluated with single-head attention: multi-head attention over the full five-million-edge graph is prohibitively memory-intensive, its cost scaling with the number of edges multiplied by the number of heads, and the single-head form has correspondingly limited capacity to learn multiple relational patterns in parallel, which the original GAT formulation identifies as important (Velickovic et al., 2018). That a memory-bounded single-head GAT underperforms the simpler spectral convolution of GCN is consistent with the view that, at this graph scale, the cost of dense attention is not repaid by a commensurate gain in detection quality. The memory behaviour of attention on large graphs is discussed further in Section 5.4.
 
 Comparing GCN to the original IBM AML dataset paper (Altman et al., 2023), the AUC-ROC reported here (0.9708) is broadly consistent with their findings, though direct numeric comparison is complicated by differences in feature construction and evaluation protocol.
 
@@ -106,7 +106,7 @@ EvolveGCN-H is the weakest GNN across all three tiers (AUC-ROC 0.9064, AUC-PR 0.
 
 Table 4.6 presents the test set results for the continuous-time TGN, which processes each transaction at its exact timestamp and maintains a per-node memory updated by an exponential moving average (Section 3.4).
 
-**Table 4.6: TGN results on the test set (chronological split), 85,905 parameters. The first two rows use the standard cold-start memory, in which per-node memory begins empty at the start of the test period and updates as transactions are processed; they share the same AUC values and differ only in decision threshold and therefore operating point. The third row warm-starts memory from the training and validation periods (Section 4.5.3).**
+**Table 4.6: TGN results on the test set (chronological split), 85,905 parameters. The first two rows use the standard cold-start memory, in which per-node memory begins empty at the start of the test period and updates as transactions are processed; they share the same AUC values and differ only in decision threshold and therefore operating point. The third row does not start from an empty memory: it first replays the training and validation transactions to populate each node's memory, then carries and updates that memory continuously through the test period (Section 4.5.3).**
 
 | Setting | AUC-ROC | AUC-PR | Precision | Recall | F1 |
 |---------|---------|--------|-----------|--------|-----|

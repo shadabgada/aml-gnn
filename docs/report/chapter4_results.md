@@ -199,7 +199,7 @@ Both models are robust to their principal hyperparameter within a sensible range
 
 **4.8 Tool Performance Summary**
 
-**Reliability and reproducibility.** All experiments use a fixed seed (42) across NumPy, PyTorch, and Python's random module, and deterministic index-based data splits, so re-running any experiment with the same arguments reproduces its result. Reproduction commands and the exact library versions used for the results in this chapter are documented in Appendix B, and per-model training and validation curves in Appendix F.
+**Reliability and reproducibility.** All experiments use a fixed seed (42) across NumPy, PyTorch, and Python's random module, and deterministic index-based data splits, so re-running any experiment with the same arguments reproduces its result. Reproduction commands and the exact library versions used for the results in this chapter are documented in Appendix B, and per-model learning curves, showing training loss and validation convergence for every neural model, in Appendix F (Figure F.1).
 
 **Computational profile.** The models differ substantially in how their cost scales with graph size. The static GNNs use full-batch message passing, whose memory footprint grows with the number of nodes and edges and is the binding constraint for dense-attention models such as GAT at this scale. GraphSAGE's neighbourhood sampling and TGN's batched, per-edge processing bound memory independently of the full graph and are therefore inherently better suited to larger deployments. All experiments were feasible on a single commodity workstation.
 

@@ -700,7 +700,7 @@ Both models are robust to their principal hyperparameter within a sensible range
 
 **4.8 Tool Performance Summary**
 
-**Reliability and reproducibility.** All experiments use a fixed seed (42) across NumPy, PyTorch, and Python's random module, and deterministic index-based data splits, so re-running any experiment with the same arguments reproduces its result. Reproduction commands and the exact library versions used for the results in this chapter are documented in Appendix B, and per-model training and validation curves in Appendix F.
+**Reliability and reproducibility.** All experiments use a fixed seed (42) across NumPy, PyTorch, and Python's random module, and deterministic index-based data splits, so re-running any experiment with the same arguments reproduces its result. Reproduction commands and the exact library versions used for the results in this chapter are documented in Appendix B, and per-model learning curves, showing training loss and validation convergence for every neural model, in Appendix F (Figure F.1).
 
 **Computational profile.** The models differ substantially in how their cost scales with graph size. The static GNNs use full-batch message passing, whose memory footprint grows with the number of nodes and edges and is the binding constraint for dense-attention models such as GAT at this scale. GraphSAGE's neighbourhood sampling and TGN's batched, per-edge processing bound memory independently of the full graph and are therefore inherently better suited to larger deployments. All experiments were feasible on a single commodity workstation.
 
@@ -1277,7 +1277,7 @@ This appendix presents the hyperparameter configurations used for all neural net
 
 **Appendix F: Training and Validation Results**
 
-This appendix provides the complete training, validation, and test set metrics for the conventional ML baselines. The training set metrics indicate how well each model fits the training data; the validation set metrics were used for early stopping and threshold calibration. The gap between training and test performance for the tree ensembles reflects the difficulty of generalising the minority class under extreme imbalance and the distribution shift of the chronological split.
+This appendix provides the complete training, validation, and test set metrics for the conventional ML baselines (Table F.1), and learning curves for the six neural models (Figure F.1). The training set metrics indicate how well each model fits the training data; the validation set metrics were used for early stopping and threshold calibration. The gap between training and test performance for the tree ensembles reflects the difficulty of generalising the minority class under extreme imbalance and the distribution shift of the chronological split.
 
 **Table F.1: Conventional ML baseline results across all splits (chronological split, threshold 0.50).**
 
@@ -1292,6 +1292,8 @@ This appendix provides the complete training, validation, and test set metrics f
 | XGBoost             | train | 0.9796  | 0.0775 | 0.0121    | 0.8869 | 0.0238 |
 | XGBoost             | val   | 0.8926  | 0.0410 | 0.0134    | 0.7632 | 0.0263 |
 | XGBoost             | test  | 0.9393  | 0.1460 | 0.0245    | 0.8706 | 0.0476 |
+
+**Figure F.1: Learning curves for the six neural models.** (`results/curves/learning_curves.png`) Validation AUC-ROC (solid) and training loss (dashed) per epoch. For every model the training loss declines smoothly to a plateau and the validation AUC-ROC converges, indicating that each model was adequately trained; GraphSAGE shows a slight late decline in validation AUC-ROC consistent with mild overfitting. Early stopping (patience 25) selects the best-validation checkpoint in each case. For the two static GNNs whose training-set ranking metrics were also logged, training and validation AUC-ROC remain close (GCN reaches training AUC-ROC 0.950 against validation 0.947; GraphSAGE 0.952 against 0.923), giving no indication of severe overfitting.
 
 ---
 

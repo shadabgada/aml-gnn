@@ -276,7 +276,7 @@ This appendix presents the hyperparameter configurations used for all neural net
 | GAT heads       | 1           | N/A           | N/A           | N/A    |
 | SAGE aggregator | mean        | N/A           | N/A           | N/A    |
 
-**Table E.2: TGN configuration search. Six development runs compared on the validation set under the chronological protocol, and the selected final configuration. All six development runs used memory dimension 128 and time-encoding dimension 16 and additionally varied the gradient-clipping setting (not shown); the decisive change that enabled minority-class learning was disabling gradient clipping (Section 3.4.4). The final row is the compact configuration adopted for the reported results.**
+**Table E.2: TGN configuration search. Six development runs compared on the validation set under the chronological protocol, and the selected final configuration. The runs varied the model capacity (parameter count), the class-weight multiplier, the learning rate, and the gradient-clipping setting; the decisive change that enabled minority-class learning was disabling gradient clipping (Section 3.4.4). The final row is the compact configuration adopted for the reported results.**
 
 | Run | Params | pos_weight mult | Learning rate | Best val AUC-ROC | Val AUC-PR | Minority class learned |
 | --- | --- | --- | --- | --- | --- | --- |

@@ -469,7 +469,7 @@ The use of pos_weight rather than alternative class imbalance handling technique
 
 Hyperparameters for the conventional and static-GNN models were set from architectural defaults in the original papers, adjusted where necessary for training stability on this dataset. No automated hyperparameter optimisation (grid, random, or Bayesian search) was performed, which is acknowledged as a limitation. The full configurations are listed in Appendix E (Table E.1).
 
-The continuous-time TGN required more deliberate configuration selection. Rather than ad hoc tuning, candidate configurations were trained under the chronological protocol and compared on validation AUC-ROC and AUC-PR, varying the memory and time-encoding dimensions (a larger setting with memory dimension 128 and time-encoding dimension 16, against a compact setting with memory dimension 64 and time-encoding dimension 8), the learning rate, the class-weight multiplier, and whether gradients were clipped. Two findings determined the final choice. First, gradient clipping had to be disabled: under the large positive-class weight required by the 0.1% prevalence, clipping suppressed the minority-class gradient and the model failed to learn the positive class, leaving validation AUC-PR at the prevalence floor (Section 3.4.4). Second, the compact configuration (memory dimension 64, time-encoding dimension 8; 85,905 parameters) matched the larger configuration on validation while using far fewer parameters, and was therefore selected. The final configuration (learning rate 0.003, pos_weight multiplier 0.01, gradient clipping disabled, EMA beta 0.85, memory dimension 64, time dimension 8) reached a best validation AUC-ROC of 0.946. The principal candidates and their validation outcomes are summarised in Appendix E (Table E.2).
+The continuous-time TGN required more deliberate configuration selection. Rather than ad hoc tuning, a sequence of configurations was trained under the chronological protocol and compared on validation AUC-ROC and AUC-PR before the final model was fixed and the test set evaluated once. Six development runs (Appendix E, Table E.2) varied the model capacity, the class-weight multiplier applied to pos_weight, the learning rate, and the gradient-clipping setting. Two findings determined the outcome. First, gradient clipping had to be disabled: under the large positive-class weight required by the 0.1% prevalence, clipping suppressed the minority-class gradient and the model failed to learn the positive class, leaving validation AUC-PR at the prevalence floor (Section 3.4.4); five of the six runs left the minority class effectively undetected, and only once clipping was removed did a configuration learn it, reaching a best validation AUC-ROC of 0.946. Second, a subsequent compact configuration (memory dimension 64, time-encoding dimension 8; 85,905 parameters) matched that larger configuration on validation while using roughly half the parameters, and was therefore adopted as the final reported model (learning rate 0.003, pos_weight multiplier 0.01, gradient clipping disabled, EMA beta 0.85). The candidate runs and their validation outcomes are given in Appendix E (Table E.2).
 
 **3.5.3 Evaluation Metrics and Threshold Calibration**
 
@@ -1261,13 +1261,17 @@ This appendix presents the hyperparameter configurations used for all neural net
 | GAT heads       | 1           | N/A           | N/A           | N/A    |
 | SAGE aggregator | mean        | N/A           | N/A           | N/A    |
 
-**Table E.2: Principal TGN candidate configurations, compared on the validation set (chronological protocol). Candidates were compared on validation AUC-ROC and AUC-PR before the final configuration was selected.**
+**Table E.2: TGN configuration search. Six development runs compared on the validation set under the chronological protocol, and the selected final configuration. All six development runs used memory dimension 128 and time-encoding dimension 16 and additionally varied the gradient-clipping setting (not shown); the decisive change that enabled minority-class learning was disabling gradient clipping (Section 3.4.4). The final row is the compact configuration adopted for the reported results.**
 
-| Candidate configuration | Best val AUC-ROC | Validation behaviour | Selected |
-| --- | --- | --- | --- |
-| Gradient clipping enabled | ~0.85-0.89 | minority class not learned; val AUC-PR at the prevalence floor | No |
-| Clipping disabled, larger memory (~119K params) | 0.946 | learns the minority class | No (more parameters, no validation gain) |
-| Clipping disabled, compact memory (dim 64, time 8; 85,905 params) | 0.946 | learns the minority class | Yes (final) |
+| Run | Params | pos_weight mult | Learning rate | Best val AUC-ROC | Val AUC-PR | Minority class learned |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 289,217 | 0.10 | 0.001 | 0.89 | 0.012 | No |
+| 2 | 289,217 | 0.01 | 0.003 | 0.85 | 0.011 | No |
+| 3 | 102,177 | 0.01 | 0.003 | 0.66 | 0.003 | No |
+| 4 | 102,177 | 0.01 | 0.003 | 0.88 | 0.012 | No |
+| 5 | 118,561 | 0.01 | 0.003 | 0.84 | 0.009 | No |
+| 6 | 118,561 | 0.01 | 0.003 | 0.946 | 0.087 | Yes |
+| Final | 85,905 | 0.01 | 0.003 | 0.946 | 0.098 | Yes (selected) |
 
 ---
 

@@ -276,13 +276,17 @@ This appendix presents the hyperparameter configurations used for all neural net
 | GAT heads       | 1           | N/A           | N/A           | N/A    |
 | SAGE aggregator | mean        | N/A           | N/A           | N/A    |
 
-**Table E.2: Principal TGN candidate configurations, compared on the validation set (chronological protocol). Candidates were compared on validation AUC-ROC and AUC-PR before the final configuration was selected.**
+**Table E.2: TGN configuration search. Six development runs compared on the validation set under the chronological protocol, and the selected final configuration. All six development runs used memory dimension 128 and time-encoding dimension 16 and additionally varied the gradient-clipping setting (not shown); the decisive change that enabled minority-class learning was disabling gradient clipping (Section 3.4.4). The final row is the compact configuration adopted for the reported results.**
 
-| Candidate configuration | Best val AUC-ROC | Validation behaviour | Selected |
-| --- | --- | --- | --- |
-| Gradient clipping enabled | ~0.85-0.89 | minority class not learned; val AUC-PR at the prevalence floor | No |
-| Clipping disabled, larger memory (~119K params) | 0.946 | learns the minority class | No (more parameters, no validation gain) |
-| Clipping disabled, compact memory (dim 64, time 8; 85,905 params) | 0.946 | learns the minority class | Yes (final) |
+| Run | Params | pos_weight mult | Learning rate | Best val AUC-ROC | Val AUC-PR | Minority class learned |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 289,217 | 0.10 | 0.001 | 0.89 | 0.012 | No |
+| 2 | 289,217 | 0.01 | 0.003 | 0.85 | 0.011 | No |
+| 3 | 102,177 | 0.01 | 0.003 | 0.66 | 0.003 | No |
+| 4 | 102,177 | 0.01 | 0.003 | 0.88 | 0.012 | No |
+| 5 | 118,561 | 0.01 | 0.003 | 0.84 | 0.009 | No |
+| 6 | 118,561 | 0.01 | 0.003 | 0.946 | 0.087 | Yes |
+| Final | 85,905 | 0.01 | 0.003 | 0.946 | 0.098 | Yes (selected) |
 
 ---
 

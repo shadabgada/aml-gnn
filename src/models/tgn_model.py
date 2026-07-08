@@ -26,6 +26,7 @@ class EMAMemory(nn.Module):
 
     def __init__(self, num_nodes: int, raw_msg_dim: int, memory_dim: int,
                  beta: float = 0.85):
+        """Initialise per-node EMA memory; beta controls how fast past interactions decay."""
         super().__init__()
         self.num_nodes = num_nodes
         self.memory_dim = memory_dim
@@ -116,6 +117,7 @@ class TGNEdgeClassifier(nn.Module):
     def __init__(self, node_embed_dim: int, edge_dim: int, time_dim: int,
                  msg_proj_dim: int = 128, hidden_dim: int = 128,
                  dropout: float = 0.3):
+        """Construct the edge-classifier MLP over concatenated node embeddings, edge features, time encoding, and message."""
         super().__init__()
         in_dim = node_embed_dim * 2 + edge_dim + time_dim + msg_proj_dim
         self.head = nn.Sequential(
@@ -130,6 +132,7 @@ class TGNEdgeClassifier(nn.Module):
 
     def forward(self, z_src: Tensor, z_dst: Tensor, edge_attr: Tensor,
                 t_enc_src: Tensor, projected_msg: Tensor) -> Tensor:
+        """Return the edge logit from source/destination embeddings, edge features, time encoding, and projected message."""
         features = torch.cat(
             [z_src, z_dst, edge_attr, t_enc_src, projected_msg], dim=-1,
         )
@@ -163,6 +166,7 @@ class TGNModel(nn.Module):
         dropout: float = 0.3,
         beta: float = 0.85,
     ):
+        """Construct the TGN: TimeEncoder, node projection, message projection, edge classifier, and per-node EMA memory."""
         super().__init__()
         self.num_nodes = num_nodes
         self.memory_dim = memory_dim
@@ -195,6 +199,7 @@ class TGNModel(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
+        """Xavier-initialise all Linear layers and zero their biases."""
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_uniform_(m.weight)

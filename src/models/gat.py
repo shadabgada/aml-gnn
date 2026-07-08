@@ -37,6 +37,7 @@ class GATEdgeClassifier(nn.Module):
         heads: int = 4,
         dropout: float = 0.3,
     ):
+        """Construct the GAT edge classifier (multi-head attention layers plus an edge-MLP head); see the class docstring for arguments."""
         super().__init__()
         self.node_dim = node_dim
         self.edge_dim = edge_dim
@@ -89,6 +90,7 @@ class GATEdgeClassifier(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
+        """Xavier-initialise all Linear layers and zero their biases."""
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_uniform_(m.weight)

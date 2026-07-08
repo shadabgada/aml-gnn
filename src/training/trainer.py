@@ -63,6 +63,7 @@ class GNNTrainer:
         log_interval: int = 10,
         edge_batch: int = 500_000,
     ):
+        """Set up the full-batch GNN trainer: model, data, class-weighted loss, optimiser, and LR scheduler (see the class docstring for arguments)."""
         self.model = model.to(device)
         self.data = data.to(device)
         self.device = device
@@ -207,6 +208,7 @@ class GNNTrainer:
 
     @property
     def calibrated_thresholds(self) -> Dict[str, float]:
+        """Return the calibrated decision thresholds (F1-optimal and recall>=0.90)."""
         return {
             "f1_optimal": self.calibrated_threshold,
             "recall90": self.calibrated_threshold_recall90,
@@ -260,6 +262,7 @@ class GNNTrainer:
     def _evaluate(
         self, mask: torch.Tensor, threshold: float = 0.5
     ) -> Dict[str, float]:
+        """Encode the full graph, score the masked edges, and return metrics at the given threshold."""
         self.model.eval()
         h = self.model.encode(self.data.x, self.data.edge_index)
         idx = mask.nonzero(as_tuple=False).squeeze(1)

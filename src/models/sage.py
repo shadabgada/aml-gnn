@@ -38,6 +38,7 @@ class GraphSAGEEdgeClassifier(nn.Module):
         aggregator: str = "mean",
         dropout: float = 0.3,
     ):
+        """Construct the GraphSAGE edge classifier (sampled-aggregation layers plus an edge-MLP head); see the class docstring for arguments."""
         super().__init__()
         self.node_dim = node_dim
         self.edge_dim = edge_dim
@@ -77,6 +78,7 @@ class GraphSAGEEdgeClassifier(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
+        """Xavier-initialise all Linear layers and zero their biases."""
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_uniform_(m.weight)

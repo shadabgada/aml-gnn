@@ -41,6 +41,7 @@ class DataConfig:
         return p
 
     def resolve_processed_dir(self) -> Path:
+        """Return the processed-data directory as an absolute Path (resolved against the project root if relative)."""
         p = Path(self.processed_dir)
         if not p.is_absolute():
             p = Path.cwd() / p

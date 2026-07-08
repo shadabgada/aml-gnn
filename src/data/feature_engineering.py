@@ -229,6 +229,7 @@ def _compute_transaction_stats(txns: pd.DataFrame) -> pd.DataFrame:
 
 
 def _categorical_columns(df: pd.DataFrame) -> List[str]:
+    """Return the names of the object/string/categorical columns in df."""
     cat = []
     for c in df.columns:
         if df[c].dtype in (object, "string") or df[c].dtype.name == "category":
@@ -249,6 +250,7 @@ def _safe_transform(encoder: LabelEncoder, values: np.ndarray, fallback: int = 0
 
 
 def _count_numeric(names: List[str], has_cyclic: bool, has_amount: bool, has_paid: bool) -> int:
+    """Count the leading numeric feature columns (those to be standardised, before the one-hot blocks)."""
     n = 0
     if has_amount:
         n += 1

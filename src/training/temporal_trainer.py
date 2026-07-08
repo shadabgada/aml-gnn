@@ -76,6 +76,7 @@ class TemporalTrainer:
         resume: bool = False,
         bptt_steps: int = 4,
     ):
+        """Set up the snapshot temporal-GNN trainer: model, ordered snapshots, split cutoffs, and class-weighted loss (see the class docstring for arguments)."""
         self.model = model.to(device)
         self.snapshots = [s.to(device) for s in snapshots]
         self.train_cutoff = train_cutoff
@@ -211,6 +212,7 @@ class TemporalTrainer:
         )
 
     def evaluate_test_calibrated(self) -> Dict[str, float]:
+        """Evaluate on the test snapshots at the validation-calibrated threshold."""
         return self._evaluate_snapshots(
             self.snapshots[self.train_cutoff:],
             threshold=self.calibrated_threshold,

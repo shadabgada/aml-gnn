@@ -47,6 +47,7 @@ class LogisticRegressionBaseline(BaseClassifier):
     """L2-regularised logistic regression with balanced class weights."""
 
     def __init__(self, pos_weight: float, max_iter: int = 1000):
+        """Build the logistic-regression baseline (lbfgs solver, balanced class weights)."""
         # class_weight='balanced' auto-computes weights from y.
         # We additionally allow manual scaling via pos_weight on the positive class.
         self.model = LogisticRegression(
@@ -60,15 +61,18 @@ class LogisticRegressionBaseline(BaseClassifier):
         self._name = "LogisticRegression"
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
+        """Fit the classifier on edge features X and labels y (balanced class weights)."""
         # class_weight='balanced' handles class imbalance — no extra sample_weight
         self.model.fit(X, y)
         logger.info("%s trained on %d samples", self._name, len(y))
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        """Return the predicted positive-class (laundering) probability for each row of X."""
         return self.model.predict_proba(X)[:, 1]
 
     @property
     def name(self) -> str:
+        """Human-readable model name used in logs and results tables."""
         return self._name
 
 
@@ -81,6 +85,7 @@ class RandomForestBaseline(BaseClassifier):
     """Random Forest with class-balanced subsampling."""
 
     def __init__(self, pos_weight: float, n_estimators: int = 200):
+        """Build the Random Forest baseline (max_depth 20, min_samples_leaf 10, balanced)."""
         self.model = RandomForestClassifier(
             n_estimators=n_estimators,
             class_weight="balanced",
@@ -94,15 +99,18 @@ class RandomForestBaseline(BaseClassifier):
         self._name = "RandomForest"
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
+        """Fit the classifier on edge features X and labels y (balanced class weights)."""
         # class_weight='balanced' handles class imbalance — no extra sample_weight
         self.model.fit(X, y)
         logger.info("%s trained on %d samples", self._name, len(y))
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        """Return the predicted positive-class (laundering) probability for each row of X."""
         return self.model.predict_proba(X)[:, 1]
 
     @property
     def name(self) -> str:
+        """Human-readable model name used in logs and results tables."""
         return self._name
 
 
@@ -121,6 +129,7 @@ class XGBoostBaseline(BaseClassifier):
         max_depth: int = 8,
         learning_rate: float = 0.05,
     ):
+        """Build the XGBoost baseline (scale_pos_weight for imbalance, early stopping)."""
         self.model = XGBClassifier(
             n_estimators=n_estimators,
             max_depth=max_depth,
@@ -138,6 +147,7 @@ class XGBoostBaseline(BaseClassifier):
     def fit(self, X: np.ndarray, y: np.ndarray,
             X_val: np.ndarray | None = None,
             y_val: np.ndarray | None = None) -> None:
+        """Fit XGBoost, early-stopping on (X_val, y_val) if provided, else on the train set."""
         eval_set = [(X_val, y_val)] if X_val is not None else [(X, y)]
         self.model.fit(
             X, y,
@@ -147,10 +157,12 @@ class XGBoostBaseline(BaseClassifier):
         logger.info("%s trained on %d samples", self._name, len(y))
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
+        """Return the predicted positive-class (laundering) probability for each row of X."""
         return self.model.predict_proba(X)[:, 1]
 
     @property
     def name(self) -> str:
+        """Human-readable model name used in logs and results tables."""
         return self._name
 
 

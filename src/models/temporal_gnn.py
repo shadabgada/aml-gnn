@@ -57,6 +57,7 @@ class TemporalGCN(nn.Module):
         num_layers: int = 2,
         dropout: float = 0.3,
     ):
+        """Construct the TemporalGCN: a shared GCN applied per snapshot with a GRU evolving per-node hidden states across snapshots."""
         super().__init__()
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
@@ -95,6 +96,7 @@ class TemporalGCN(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
+        """Xavier-initialise all Linear layers and zero their biases."""
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.xavier_uniform_(m.weight)
@@ -211,6 +213,7 @@ class EvolveGCNH(nn.Module):
         rank: int = 8,
         dropout: float = 0.3,
     ):
+        """Construct EvolveGCN-H: a GRU evolves the low-rank GCN weight matrices across snapshots (rank controls capacity and parameter count)."""
         super().__init__()
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
@@ -266,6 +269,7 @@ class EvolveGCNH(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
+        """Xavier-initialise the base GCN weight matrices that the GRU evolves."""
         for p in self.base_weights:
             nn.init.xavier_uniform_(p)
         for m in self.modules():
@@ -409,4 +413,5 @@ class EvolveGCNH(nn.Module):
         return all_logits
 
     def forward(self, snapshots: list) -> list[torch.Tensor]:
+        """Run the model over a chronological sequence of snapshots (delegates to forward_sequence)."""
         return self.forward_sequence(snapshots)

@@ -64,6 +64,7 @@ class TGNTrainer:
         checkpoint_dir: str = "results/checkpoints",
         checkpoint_interval: int = 10,
     ):
+        """Set up the TGN trainer: model, temporal data, chronological split indices, and class-weighted loss (see the class docstring for arguments)."""
         self.model = model.to(device)
         self.data = temporal_data.to(device)
         self.train_end_idx = train_end_idx
@@ -188,9 +189,11 @@ class TGNTrainer:
         return self.history
 
     def evaluate_test(self) -> Dict[str, float]:
+        """Evaluate on the test edges at the default 0.5 threshold (cold-start memory)."""
         return self._evaluate_split(self.test_edges, threshold=0.5)
 
     def evaluate_test_calibrated(self) -> Dict[str, float]:
+        """Evaluate on the test edges at the validation-calibrated threshold (cold-start memory)."""
         return self._evaluate_split(
             self.test_edges, threshold=self.calibrated_threshold,
         )
@@ -439,6 +442,7 @@ class TGNTrainer:
         )
 
     def _save_checkpoint(self, path: str, epoch: int) -> None:
+        """Save model weights and the EMA memory buffers to disk for later eval-only reuse."""
         os.makedirs(self.checkpoint_dir, exist_ok=True)
         torch.save({
             "epoch": epoch,
